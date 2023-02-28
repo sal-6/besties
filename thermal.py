@@ -1,4 +1,5 @@
 import math
+import matplotlib
 
 
 def calculate_radiator_size(internal_heat, alpha_rad, epsilon_rad, Q_solar, Q_albedo, Q_earthir, temp_sc, temp_env):
