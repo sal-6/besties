@@ -11,4 +11,4 @@ This repo comprises the efforts of almanac44 (https://github.com/almanac44), sal
 TODO
 
 ## Tasks
-- [] TODO
+- [ ] TODO
