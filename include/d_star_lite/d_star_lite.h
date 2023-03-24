@@ -29,6 +29,7 @@ class Priority {
         float k1;
         float k2;
         
+        Priority();
         Priority(float k1, float k2);
 };
 
@@ -39,20 +40,24 @@ class PriorityItem {
         Node* node;
         
         PriorityItem(Priority priority, Node* node);
+        
+        bool operator<(const PriorityItem& other) const;
 };
 
 
 class Queue {
     public:
     
-        std::priority_queue<Priority> queue;
+        std::priority_queue<PriorityItem, std::vector<PriorityItem>> queue;
         
         Queue();
-        void top();
-        void top_key();
-        void pop();
-        void insert();
-        void remove();
+        Node* top();
+        Priority top_key();
+        PriorityItem pop();
+        void insert(PriorityItem item);
+        void remove(Node* node);
+        
+        int size();
         
 };
 
