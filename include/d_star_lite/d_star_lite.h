@@ -9,6 +9,7 @@ class Node {
         float g;
         float rhs;
         
+        Node();
         Node(int x, int y);
 };
 
@@ -18,8 +19,10 @@ class Grid {
         int width;
         int height;
         
+        Node **grid;
         
         Grid(int width, int height);
+        Node* get_node(int x, int y);
         void succ();
 };
 
