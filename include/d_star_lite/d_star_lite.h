@@ -1,6 +1,7 @@
 #include <queue>
 
 
+
 class Node {
     public:
         int x;
@@ -58,7 +59,9 @@ class Queue {
         Priority top_key();
         PriorityItem pop();
         void insert(PriorityItem item);
+        void update(Node* node, Priority priority);
         void remove(Node* node);
+        bool contains(Node* node);
         
         int size();
         
@@ -70,17 +73,21 @@ Implementation of D* Lite according to Figure 3 of the paper: http://idm-lab.org
 */
 class DStarLite {
     public:
-        Node* start;
-        Node* goal;
+        Node* s_start;
+        Node* s_goal;
         Grid* map;
         float km;
         Queue U;
         
+        Node* s_last;
+        
         DStarLite(Node* start, Node* goal, Grid* map);
         
-        void calculate_key(Node s);
-        void initialize();
-        void update_vertex(Node u);
+        Priority calculate_key(Node* s);
+        void update_vertex(Node* u);
         void compute_shortest_path();
         void c(Node u, Node v);
 };
+
+
+float heuristic(Node* u, Node* v);

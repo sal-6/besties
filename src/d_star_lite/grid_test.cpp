@@ -4,6 +4,7 @@
 int main() {
     Grid grid = Grid(10, 10);
     Node* n = grid.get_node(1, 1);
+    Node* n5 = grid.get_node(5, 5);
     
     std::cout << n->x << ", " << n->y << std::endl;
     
@@ -14,6 +15,8 @@ int main() {
     Node* n2 = grid.get_node(1, 1);
     
     std::cout << n2->x << ", " << n2->y << std::endl;
+    
+    std::cout << n5->x << ", " << n5->y << std::endl;
     
     
     return 0;

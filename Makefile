@@ -1,11 +1,11 @@
 CC=g++
 CFLAGS=-I./include
 
-all: priority_queue_test.o d_star_lite.o
-	$(CC) priority_queue_test.o d_star_lite.o -o pqt
+all: d_star.o d_star_lite.o
+	$(CC) d_star.o d_star_lite.o -o ds
 
-priority_queue_test.o: ./src/d_star_lite/priority_queue_test.cpp
-	$(CC) -c $(CFLAGS) ./src/d_star_lite/priority_queue_test.cpp
+d_star.o : ./src/d_star_lite/d_star.cpp
+	$(CC) -c $(CFLAGS) ./src/d_star_lite/d_star.cpp
 
 d_star_lite.o: ./src/d_star_lite/d_star_lite.cpp
 	$(CC) -c $(CFLAGS) ./src/d_star_lite/d_star_lite.cpp
