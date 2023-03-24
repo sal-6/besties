@@ -27,5 +27,12 @@ int main() {
     std::cout << n3->x << ", " << n3->y << std::endl;
     
     std::cout << (pi2 < pi1) << std::endl;
+    std::cout << U.size() << std::endl;
+    
+    U.remove(n3);
+    
+    std::cout << U.size() << std::endl;
+    std::cout << U.top()->x << ", " << U.top()->y << std::endl;
+    
     return 0;
 }
