@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "d_star_lite/d_star_lite.h"
 
@@ -12,8 +13,16 @@ int main() {
     
     DStarLite d_star = DStarLite(start, goal, &grid);
     
-    Path p = d_star.main_loop();
-    p.export_to_file("./output/d_star_lite/path.csv");
+    Path p = d_star.main_loop(start);
+    
+    int count = 0;
+    while (p.nodes.size() > 1) {
+        Node* next_pos = p.nodes[1];
+        p = d_star.main_loop(next_pos);
+        
+        p.export_to_file("./output/d_star_lite/path/path_" + std::to_string(count) + ".csv");
+        count++;
+    }
     
     return 0;
 }

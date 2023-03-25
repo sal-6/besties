@@ -99,7 +99,7 @@ class DStarLite {
         void update_vertex(Node* u);
         float c(Node* u, Node* v);
         void compute_shortest_path();
-        Path main_loop();
+        Path main_loop(Node* begin_loc);
 };
 
 

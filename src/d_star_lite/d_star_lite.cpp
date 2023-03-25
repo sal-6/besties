@@ -292,10 +292,11 @@ void DStarLite::compute_shortest_path() {
     }
 }
 
-Path DStarLite::main_loop() {
+Path DStarLite::main_loop(Node* begin_loc) {
     Path path = Path();
-    path.append(this->s_start);
     
+    this->s_start = begin_loc;
+    path.append(this->s_start);
     this->s_last = this->s_start;
     this->compute_shortest_path();
     
