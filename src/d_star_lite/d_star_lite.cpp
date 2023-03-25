@@ -324,6 +324,7 @@ Path DStarLite::main_loop() {
         this->compute_shortest_path();        
     }
     
+    
     std::cout << "Path found" << std::endl;
     for (Node* n : path.nodes) {
         std::cout << n->x << ", " << n->y << std::endl;
