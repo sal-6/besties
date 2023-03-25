@@ -18,6 +18,18 @@ class Node {
         Node(int x, int y);
 };
 
+class Edge {
+    public:
+        Node* start;
+        Node* end;
+        float cost;
+        float old_cost;
+        
+        Edge(Node* start, Node* end, float cost);
+        Edge(Node* start, Node* end, float cost, float old_cost);
+};
+
+
 
 class Grid {
     public:
@@ -35,6 +47,10 @@ class Grid {
         std::vector<Node*> pred(Node* node);
         std::vector<Node*> succ(Node* node);
         
+        float c(Node* u, Node* v);
+        
+        std::vector<Edge*> get_changed_edges_about_node(Node* node, Grid* curr_state, int distance);
+        void update_grid_from_changed_edges(std::vector<Edge*> changed_edges);
         bool export_obs_to_file(std::string filename);
 };
 
@@ -101,12 +117,17 @@ class DStarLite {
         
         Node* s_last;
         
+        std::vector<Edge*> changed_edge_costs;
+        
         DStarLite(Node* start, Node* goal, Grid* map);
         
         Priority calculate_key(Node* s);
         void update_vertex(Node* u);
         float c(Node* u, Node* v);
         void compute_shortest_path();
+        void queue_updated_edges(std::vector<Edge*> changed_edges);
+        std::vector<Edge*> scan_for_changes();
+        
         Path main_loop(Node* begin_loc);
 };
 

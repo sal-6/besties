@@ -6,26 +6,43 @@
 
 int main() {
     
-    Grid grid = Grid(30, 30);
+    Grid true_grid = Grid(30, 30);
+    Grid known_grid = Grid(30, 30);
     
     for (int i = 0; i < 25; i++) {
-        grid.obstruct(15, i);
+        true_grid.obstruct(15, i);
+        known_grid.obstruct(15, i);
     }
     
-    Node* start = grid.get_node(0, 0);
-    Node* goal = grid.get_node(29, 15);
+    for (int i = 1; i < 15; i++) {
+        true_grid.obstruct(i, 24);
+    }
     
-    DStarLite d_star = DStarLite(start, goal, &grid);
+    Node* start = known_grid.get_node(0, 0);
+    Node* goal = known_grid.get_node(29, 15);
+    
+    DStarLite d_star = DStarLite(start, goal, &known_grid);
     
     Path p = d_star.main_loop(start);
     
+    
     int count = 0;
     while (p.nodes.size() > 1) {
-        Node* next_pos = p.nodes[1];
+        Node* next_pos = p.nodes[1];        
+        
+        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 7);
+        
+        std::cout << "Changes: " << changes.size() << std::endl;
+        d_star.queue_updated_edges(changes);
+        std::cout << "Queue Changes: " << changes.size() << std::endl;
+        d_star.map->update_grid_from_changed_edges(changes);
+        std::cout << "Made Changes: " << changes.size() << std::endl;
+        
         p = d_star.main_loop(next_pos);
         
         p.export_to_file("./output/d_star_lite/path/path_" + std::to_string(count) + ".csv");
         d_star.map->export_obs_to_file("./output/d_star_lite/path/obs_" + std::to_string(count) + ".csv");
+        true_grid.export_obs_to_file("./output/d_star_lite/path/true_obs_" + std::to_string(count) + ".csv");
         count++;
     }
     
