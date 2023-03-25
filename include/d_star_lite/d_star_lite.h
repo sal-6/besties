@@ -1,4 +1,5 @@
 #include <queue>
+#include <vector>
 
 
 
@@ -23,8 +24,10 @@ class Grid {
         Node **grid;
         
         Grid(int width, int height);
+        bool in_bounds(int x, int y);
         Node* get_node(int x, int y);
-        void succ();
+        std::vector<Node*> pred(Node* node);
+        std::vector<Node*> succ(Node* node);
 };
 
 
@@ -35,6 +38,7 @@ class Priority {
         
         Priority();
         Priority(float k1, float k2);
+        bool operator<(const Priority& other) const;
 };
 
 
@@ -67,6 +71,14 @@ class Queue {
         
 };
 
+class Path {
+    public:
+        std::vector<Node*> nodes;
+        
+        Path();
+        void append(Node* node);
+        bool export_to_file(std::string filename);
+};
 
 /*
 Implementation of D* Lite according to Figure 3 of the paper: http://idm-lab.org/bib/abstracts/papers/aaai02b.pdf
@@ -85,8 +97,9 @@ class DStarLite {
         
         Priority calculate_key(Node* s);
         void update_vertex(Node* u);
+        float c(Node* u, Node* v);
         void compute_shortest_path();
-        void c(Node u, Node v);
+        Path main_loop();
 };
 
 
