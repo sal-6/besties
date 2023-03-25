@@ -8,6 +8,9 @@ class Node {
         int x;
         int y;
         
+        // this is likely temporary
+        bool is_obstacle;
+        
         float g;
         float rhs;
         
@@ -22,12 +25,17 @@ class Grid {
         int height;
         
         Node **grid;
-        
+
         Grid(int width, int height);
+        
         bool in_bounds(int x, int y);
+        void obstruct(int x, int y);
+        bool is_obstructed(int x, int y);
         Node* get_node(int x, int y);
         std::vector<Node*> pred(Node* node);
         std::vector<Node*> succ(Node* node);
+        
+        bool export_obs_to_file(std::string filename);
 };
 
 

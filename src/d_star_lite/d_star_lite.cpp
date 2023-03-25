@@ -16,11 +16,14 @@ float heuristic(Node* a, Node* b) {
 Node::Node() {
     this->x = 0;
     this->y = 0;
+    this->is_obstacle = false;
 }
 
 Node::Node(int x, int y) {
     this->x = x;
     this->y = y;
+    this->is_obstacle = false;
+    
 }
 
 Grid::Grid(int width, int height) {
@@ -46,6 +49,14 @@ Node* Grid::get_node(int x, int y) {
 
 bool Grid::in_bounds(int x, int y) {
     return x >= 0 && x < this->width && y >= 0 && y < this->height;
+}
+
+void Grid::obstruct(int x, int y) {
+    this->grid[x][y].is_obstacle = true;
+}
+
+bool Grid::is_obstructed(int x, int y) {
+    return this->in_bounds(x, y) && this->grid[x][y].is_obstacle;
 }
 
 std::vector<Node*> Grid::pred(Node* node) {
@@ -94,6 +105,25 @@ std::vector<Node*> Grid::succ(Node* node) {
     
 }
 
+bool Grid::export_obs_to_file(std::string filename) {
+    FILE* fp = fopen(filename.c_str(), "w");
+    if (fp == NULL) {
+        return false;
+    }
+
+    // loop through all nodes in grid
+    for (int i = 0; i < this->width; i++) {
+        for (int j = 0; j < this->height; j++) {
+            if (this->grid[i][j].is_obstacle) {
+                fprintf(fp, "%d,%d\n", i, j);
+            }
+        }
+    }
+    
+    
+    fclose(fp);
+    return true;
+}
 
 Priority::Priority() {
     this->k1 = 0;
@@ -194,7 +224,6 @@ bool Path::export_to_file(std::string filename) {
 
     // log each trajectory
     for (Node* node : this->nodes) {
-        std::cout << node->x << ", " << node->y << std::endl;
         fprintf(fp, "%d, %d\n", node->x, node->y);
     }
     
@@ -245,6 +274,10 @@ void DStarLite::update_vertex(Node* u) {
 
 float DStarLite::c(Node* a, Node* b) {
     //TODO: account for obstacles
+    if (a->is_obstacle || b->is_obstacle) {
+        return std::numeric_limits<float>::infinity();
+    }
+    
     return heuristic(a, b);
 }
 

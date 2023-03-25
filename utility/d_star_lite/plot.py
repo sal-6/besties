@@ -11,6 +11,7 @@ WIDTH = 30
 HEIGHT = 30
 
 PATH_SIDE_LENGTH = 0.5
+OBS_SIDE_LENGTH = 1
 
 def parse_path(fpath):
     
@@ -23,11 +24,23 @@ def parse_path(fpath):
     return path
 
 
+def parse_obs(fpath):
+    
+    obs = []
+    with open(fpath, 'r') as f:
+        for line in f:
+            data = line.split(",")
+            obs.append((int(data[0]), int(data[1])))
+    
+    return obs
+    
+
+
 def calculate_patch_center(x, y, w=1, h=1):
     return (x - w / 2, y - h / 2)
 
 
-def plot_path(fpath, output_path):
+def plot_path(fpath, output_path, obs_path=None):
     data = parse_path(fpath)
     
     # Create a figure and axis
@@ -47,6 +60,13 @@ def plot_path(fpath, output_path):
         rect = patches.Rectangle(calculate_patch_center(x, y, PATH_SIDE_LENGTH, PATH_SIDE_LENGTH), PATH_SIDE_LENGTH, PATH_SIDE_LENGTH, linewidth=1, facecolor='pink')
         ax.add_patch(rect)
         
+    if obs_path:
+        obs = parse_obs(obs_path)
+        for i in range(len(obs)):
+            x, y = obs[i]
+            rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='black')
+            ax.add_patch(rect)
+        
     ax.set_xlim([-1, WIDTH + 1])
     ax.set_ylim([-1, HEIGHT + 1])
     
@@ -55,7 +75,7 @@ def plot_path(fpath, output_path):
     plt.savefig(output_path)
     plt.close()
 
-def animate_dir(pdir, start=0, end=28):
+def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False):
     
     for i in range(start, end + 1):
         print(f"Plotting path {i} of {end}")
@@ -63,7 +83,10 @@ def animate_dir(pdir, start=0, end=28):
         output_path = os.path.join(pdir, "temp", f"{i}.png")
         if not os.path.exists(os.path.dirname(output_path)):
             os.makedirs(os.path.dirname(output_path))
-        plot_path(fpath, output_path)
+        if plot_obs:
+            plot_path(fpath, output_path, obs_path=os.path.join(pdir, f"obs_{i}.csv"))
+        else:
+            plot_path(fpath, output_path)
 
     with imageio.get_writer(os.path.join(pdir, "path.gif"), mode='I') as writer:
         for i in range(start, end + 1):
@@ -74,6 +97,12 @@ def animate_dir(pdir, start=0, end=28):
     for i in range(start, end + 1):
         os.remove(os.path.join(pdir, "temp", f"{i}.png"))
     os.rmdir(os.path.join(pdir, "temp"))
+    
+    if delete_inputs_files:
+        for i in range(start, end + 1):
+            os.remove(os.path.join(pdir, f"path_{i}.csv"))
+            if plot_obs:
+                os.remove(os.path.join(pdir, f"obs_{i}.csv"))
 
 if __name__ == "__main__":
-    animate_dir(OUTPUT_PATH, 0, 28)
+    animate_dir(OUTPUT_PATH, 0, 38, delete_inputs_files=True, plot_obs=True)
