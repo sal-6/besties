@@ -294,6 +294,11 @@ int Queue::size() {
     return this->queue.size();
 }
 
+void Queue::clear(){
+    std::priority_queue<PriorityItem, std::vector<PriorityItem>> new_queue = std::priority_queue<PriorityItem, std::vector<PriorityItem>>();
+    this->queue = new_queue;
+}
+
 Path::Path() {
     this->nodes = std::vector<Node*>();
 }
@@ -369,6 +374,7 @@ void DStarLite::compute_shortest_path() {
     
     while (this->U.top_key() < this->calculate_key(this->s_start) || this->s_start->rhs > this->s_start->g) {
         Node* u = this->U.top();
+        u = this->map->get_node(u->x, u->y);
         Priority k_old = this->U.top_key();
         Priority k_new = this->calculate_key(u);
         
@@ -408,6 +414,7 @@ void DStarLite::compute_shortest_path() {
             }
         }
     }
+
 }
 
 void DStarLite::queue_updated_edges(std::vector<Edge*> changed_edges) {
@@ -429,7 +436,8 @@ std::vector<Edge*> DStarLite::scan_for_changes() {
 Path DStarLite::main_loop(Node* begin_loc) {
     Path path = Path();
     
-    this->s_start = begin_loc;
+    this->U.clear();
+    this->s_start = this->map->get_node(begin_loc->x, begin_loc->y);
     path.append(this->s_start);
     this->s_last = this->s_start;
     this->compute_shortest_path();
@@ -441,9 +449,11 @@ Path DStarLite::main_loop(Node* begin_loc) {
         }
         
         std::vector<Node*> succs = this->map->succ(s_start);
+
         float min_s = std::numeric_limits<float>::infinity();
         Node* s_min = nullptr;
         for (Node*s_prime : succs) {
+            std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
             float curr = this->c(s_start, s_prime) + s_prime->g;
             if (curr < min_s) {
                 min_s = curr;
@@ -457,7 +467,6 @@ Path DStarLite::main_loop(Node* begin_loc) {
         s_start = s_min;
         path.append(s_start);
         
-        // TODO: scan for changes
         std::vector<Edge*> changed_edges = this->scan_for_changes();
         if (changed_edges.size() > 0) {
             this->map->log_grid();
@@ -465,19 +474,20 @@ Path DStarLite::main_loop(Node* begin_loc) {
             this->km += heuristic(this->s_last, this->s_start);
             this->s_last = this->s_start;
             
+
             for (Edge* edge : changed_edges) {
                 std::cout << "updating" << std::endl;
 
-                
                 Node* u = this->map->get_node(edge->start->x, edge->start->y);
                 Node* v = this->map->get_node(edge->end->x, edge->end->y);
                 
                 float c_old = edge->old_cost;
                 float c_new = this->map->c(u, v);
-                
+            
                 if (c_old > c_new) {
                     if (u != this->s_goal) {
                         u->rhs = std::min(u->rhs, c_new + v->g);
+                        std::cout << "a" << std::endl;
                     }
                 } else if (u->rhs == c_old + v->g) {
                     if (u != this->s_goal) {
@@ -490,6 +500,8 @@ Path DStarLite::main_loop(Node* begin_loc) {
                             }
                         }
                         u->rhs = min_s;
+                        std::cout << "b" << std::endl;
+
                     }
                     this->update_vertex(u);
                 }

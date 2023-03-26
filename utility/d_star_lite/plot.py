@@ -13,6 +13,8 @@ HEIGHT = 30
 PATH_SIDE_LENGTH = 0.5
 OBS_SIDE_LENGTH = 1
 
+VIEW_DISTANCE = 3
+
 def parse_path(fpath):
     
     path = []
@@ -70,6 +72,12 @@ def plot_path(fpath, output_path, obs_path=None, true_obs_path=None):
             else:
                 rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='black')
             ax.add_patch(rect)
+
+    # draw a 2*VIEW_DISTANCE x 2*VIEW_DISTANCE square around the current position
+    x, y = data[0]
+    total_size = 2*VIEW_DISTANCE+3
+    rect = patches.Rectangle(calculate_patch_center(x, y, total_size, total_size), total_size, total_size, linewidth=1, edgecolor='black', facecolor='none')
+    ax.add_patch(rect)
         
     ax.set_xlim([-1, WIDTH + 1])
     ax.set_ylim([-1, HEIGHT + 1])
@@ -110,4 +118,4 @@ def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False
                 os.remove(os.path.join(pdir, f"true_obs_{i}.csv"))
 
 if __name__ == "__main__":
-    animate_dir(OUTPUT_PATH, 0, 21, delete_inputs_files=True, plot_obs=True)
+    animate_dir(OUTPUT_PATH, 0, 44, delete_inputs_files=True, plot_obs=True)

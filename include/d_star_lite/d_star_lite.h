@@ -92,6 +92,7 @@ class Queue {
         void update(Node* node, Priority priority);
         void remove(Node* node);
         bool contains(Node* node);
+        void clear();
         
         int size();
         

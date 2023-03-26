@@ -14,7 +14,7 @@ int main() {
         known_grid.obstruct(15, i);
     }
     
-    for (int i = 2; i < 15; i++) {
+    for (int i = 16; i < 26; i++) {
         true_grid.obstruct(i, 24);
     }
     
