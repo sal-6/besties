@@ -120,7 +120,7 @@ std::vector<Node*> Grid::succ(Node* node) {
 }
 
 float Grid::c(Node* u, Node* v) {
-    if (u->is_obstacle || u->is_obstacle) {
+    if (this->get_node(u->x, u->y)->is_obstacle || this->get_node(v->x, v->y)->is_obstacle) {
         return std::numeric_limits<float>::infinity();
     }
     
@@ -197,6 +197,20 @@ bool Grid::export_obs_to_file(std::string filename) {
     
     fclose(fp);
     return true;
+}
+
+void Grid::log_grid() {
+    // print last row first (y = 0 is at the bottom)
+    for (int j = this->height - 1; j >= 0; j--) {
+        for (int i = 0; i < this->width; i++) {
+            if (this->grid[i][j].is_obstacle) {
+                printf("X");
+            } else {
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
 }
 
 Priority::Priority() {
@@ -354,7 +368,6 @@ float DStarLite::c(Node* a, Node* b) {
 void DStarLite::compute_shortest_path() {
     
     while (this->U.top_key() < this->calculate_key(this->s_start) || this->s_start->rhs > this->s_start->g) {
-        std::cout << U.size() << std::endl;
         Node* u = this->U.top();
         Priority k_old = this->U.top_key();
         Priority k_new = this->calculate_key(u);
@@ -379,7 +392,6 @@ void DStarLite::compute_shortest_path() {
             for (Node* s : preds) {
                 if (s->rhs == this->c(s, u) + g_old) {
                     if (s != this->s_goal) {
-                        std::cout << s->x << ", " << s->y << std::endl;
                         
                         std::vector<Node*> succs = this->map->succ(s);
                         float min_s = std::numeric_limits<float>::infinity();
@@ -423,8 +435,6 @@ Path DStarLite::main_loop(Node* begin_loc) {
     this->compute_shortest_path();
     
     while (s_start != s_goal){
-        std::cout << "Current location: " << s_start->x << ", " << s_start->y << std::endl;
-        std::cout << s_start->is_obstacle << std::endl;
         if (s_start->rhs == std::numeric_limits<float>::infinity()) {
             std::cout << "No path found" << std::endl;
             return path;
@@ -441,21 +451,26 @@ Path DStarLite::main_loop(Node* begin_loc) {
             }
         }
         
+        std::cout << "here" << std::endl;
+        std::cout << s_start->x << " " << s_start->y << std::endl;
+
         s_start = s_min;
         path.append(s_start);
         
         // TODO: scan for changes
         std::vector<Edge*> changed_edges = this->scan_for_changes();
-        std::cout << "Changed edges: " << changed_edges.size() << std::endl;
         if (changed_edges.size() > 0) {
+            this->map->log_grid();
+            std::cout << " changes detected" << std::endl;
             this->km += heuristic(this->s_last, this->s_start);
             this->s_last = this->s_start;
             
             for (Edge* edge : changed_edges) {
-                std::cout << "Edge stff" << std::endl;
+                std::cout << "updating" << std::endl;
+
                 
-                Node* v = this->map->get_node(edge->start->x, edge->start->y);
-                Node* u = this->map->get_node(edge->end->x, edge->end->y);
+                Node* u = this->map->get_node(edge->start->x, edge->start->y);
+                Node* v = this->map->get_node(edge->end->x, edge->end->y);
                 
                 float c_old = edge->old_cost;
                 float c_new = this->map->c(u, v);
@@ -480,15 +495,15 @@ Path DStarLite::main_loop(Node* begin_loc) {
                 }
                 
             }
-        std::cout << "post loop" << std::endl;
             
         }
-        std::cout << "Computing shortest path" << std::endl;
         this->compute_shortest_path();        
     }
     
     
     std::cout << "Path found" << std::endl;
+    std::cout << "-----------" << std::endl;
+
     
     return path;
 }

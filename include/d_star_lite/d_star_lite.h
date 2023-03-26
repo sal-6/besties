@@ -52,6 +52,8 @@ class Grid {
         std::vector<Edge*> get_changed_edges_about_node(Node* node, Grid* curr_state, int distance);
         void update_grid_from_changed_edges(std::vector<Edge*> changed_edges);
         bool export_obs_to_file(std::string filename);
+
+        void log_grid();
 };
 
 

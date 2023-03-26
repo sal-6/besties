@@ -14,7 +14,7 @@ int main() {
         known_grid.obstruct(15, i);
     }
     
-    for (int i = 1; i < 15; i++) {
+    for (int i = 2; i < 15; i++) {
         true_grid.obstruct(i, 24);
     }
     
@@ -30,13 +30,15 @@ int main() {
     while (p.nodes.size() > 1) {
         Node* next_pos = p.nodes[1];        
         
-        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 7);
+        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 3);
         
-        std::cout << "Changes: " << changes.size() << std::endl;
         d_star.queue_updated_edges(changes);
-        std::cout << "Queue Changes: " << changes.size() << std::endl;
         d_star.map->update_grid_from_changed_edges(changes);
-        std::cout << "Made Changes: " << changes.size() << std::endl;
+
+        //std::cout << "True vs Known: " << std::endl;
+        //true_grid.log_grid();
+        //std::cout << std::endl;
+        //d_star.map->log_grid();
         
         p = d_star.main_loop(next_pos);
         
