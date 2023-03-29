@@ -13,6 +13,8 @@ HEIGHT = 30
 PATH_SIDE_LENGTH = 0.5
 OBS_SIDE_LENGTH = 1
 
+VIEW_DISTANCE = 3
+
 def parse_path(fpath):
     
     path = []
@@ -40,7 +42,7 @@ def calculate_patch_center(x, y, w=1, h=1):
     return (x - w / 2, y - h / 2)
 
 
-def plot_path(fpath, output_path, obs_path=None):
+def plot_path(fpath, output_path, obs_path=None, true_obs_path=None):
     data = parse_path(fpath)
     
     # Create a figure and axis
@@ -60,12 +62,22 @@ def plot_path(fpath, output_path, obs_path=None):
         rect = patches.Rectangle(calculate_patch_center(x, y, PATH_SIDE_LENGTH, PATH_SIDE_LENGTH), PATH_SIDE_LENGTH, PATH_SIDE_LENGTH, linewidth=1, facecolor='pink')
         ax.add_patch(rect)
         
-    if obs_path:
+    if obs_path and true_obs_path:
         obs = parse_obs(obs_path)
-        for i in range(len(obs)):
-            x, y = obs[i]
-            rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='black')
+        true_obs = parse_obs(true_obs_path)
+        for i in range(len(true_obs)):
+            x, y = true_obs[i]
+            if true_obs[i] not in obs:
+                rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='red')
+            else:
+                rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='black')
             ax.add_patch(rect)
+
+    # draw a 2*VIEW_DISTANCE x 2*VIEW_DISTANCE square around the current position
+    x, y = data[0]
+    total_size = 2*VIEW_DISTANCE+3
+    rect = patches.Rectangle(calculate_patch_center(x, y, total_size, total_size), total_size, total_size, linewidth=1, edgecolor='black', facecolor='none')
+    ax.add_patch(rect)
         
     ax.set_xlim([-1, WIDTH + 1])
     ax.set_ylim([-1, HEIGHT + 1])
@@ -84,7 +96,7 @@ def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False
         if not os.path.exists(os.path.dirname(output_path)):
             os.makedirs(os.path.dirname(output_path))
         if plot_obs:
-            plot_path(fpath, output_path, obs_path=os.path.join(pdir, f"obs_{i}.csv"))
+            plot_path(fpath, output_path, obs_path=os.path.join(pdir, f"obs_{i}.csv"), true_obs_path=os.path.join(pdir, f"true_obs_{i}.csv"))
         else:
             plot_path(fpath, output_path)
 
@@ -103,6 +115,7 @@ def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False
             os.remove(os.path.join(pdir, f"path_{i}.csv"))
             if plot_obs:
                 os.remove(os.path.join(pdir, f"obs_{i}.csv"))
+                os.remove(os.path.join(pdir, f"true_obs_{i}.csv"))
 
 if __name__ == "__main__":
-    animate_dir(OUTPUT_PATH, 0, 38, delete_inputs_files=True, plot_obs=True)
+    animate_dir(OUTPUT_PATH, 0, 44, delete_inputs_files=True, plot_obs=True)
