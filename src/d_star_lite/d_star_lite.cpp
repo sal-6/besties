@@ -219,7 +219,8 @@ Priority::Priority() {
 }
 
 bool Priority::operator<(const Priority& other) const {
-    return this->k1 < other.k1 || (this->k1 == other.k1 && this->k2 < other.k2);
+    //std::cout << "here" << std::endl;
+    return this->k1 + 0.001 < other.k1 || (this->k1 == other.k1 && this->k2 + 0.001 < other.k2 );
 }
 
 Priority::Priority(float k1, float k2) {
@@ -245,6 +246,10 @@ Node* Queue::top() {
 }
 
 Priority Queue::top_key() {
+    //if (this->queue.empty()) {
+    //    // infinity
+    //    return Priority(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+    //}
     return this->queue.top().priority;
 }
 
@@ -259,7 +264,10 @@ void Queue::insert(PriorityItem item) {
 }
 
 void Queue::update(Node* node, Priority priority) {
+    std::cout << this->queue.size() << std::endl;
     this->remove(node);
+    std::cout << this->queue.size() << std::endl;
+    
     this->insert(PriorityItem(priority, node));
 }
 
@@ -395,6 +403,7 @@ void DStarLite::compute_shortest_path() {
             u->g = std::numeric_limits<float>::infinity();
             std::vector<Node*> preds = this->map->pred(u);
             preds.push_back(u);
+            
             for (Node* s : preds) {
                 if (s->rhs == this->c(s, u) + g_old) {
                     if (s != this->s_goal) {
@@ -453,7 +462,7 @@ Path DStarLite::main_loop(Node* begin_loc) {
         float min_s = std::numeric_limits<float>::infinity();
         Node* s_min = nullptr;
         for (Node*s_prime : succs) {
-            std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
+            //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
             float curr = this->c(s_start, s_prime) + s_prime->g;
             if (curr < min_s) {
                 min_s = curr;
@@ -487,7 +496,6 @@ Path DStarLite::main_loop(Node* begin_loc) {
                 if (c_old > c_new) {
                     if (u != this->s_goal) {
                         u->rhs = std::min(u->rhs, c_new + v->g);
-                        std::cout << "a" << std::endl;
                     }
                 } else if (u->rhs == c_old + v->g) {
                     if (u != this->s_goal) {
@@ -500,7 +508,6 @@ Path DStarLite::main_loop(Node* begin_loc) {
                             }
                         }
                         u->rhs = min_s;
-                        std::cout << "b" << std::endl;
 
                     }
                     this->update_vertex(u);
