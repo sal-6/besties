@@ -264,9 +264,9 @@ void Queue::insert(PriorityItem item) {
 }
 
 void Queue::update(Node* node, Priority priority) {
-    std::cout << this->queue.size() << std::endl;
+    //std::cout << this->queue.size() << std::endl;
     this->remove(node);
-    std::cout << this->queue.size() << std::endl;
+    //std::cout << this->queue.size() << std::endl;
     
     this->insert(PriorityItem(priority, node));
 }
@@ -477,10 +477,22 @@ Path DStarLite::main_loop(Node* begin_loc) {
         path.append(s_start);
         
         std::vector<Edge*> changed_edges = this->scan_for_changes();
+        std::cout << "changed edges size: " << changed_edges.size() << std::endl;
+        // log all changes
+        for (Edge* edge : changed_edges) {
+            std::cout << "start: " << edge->start->x << " " << edge->start->y << std::endl;
+            std::cout << "end: " << edge->end->x << " " << edge->end->y << std::endl;
+            std::cout << "old cost: " << edge->old_cost << std::endl;
+            std::cout << "new cost: " << edge->cost << std::endl;
+            std::cout << "----------------" << std::endl;
+        }
+        //this->map->log_grid();
         if (changed_edges.size() > 0) {
+            //std::cin.get();
             this->map->log_grid();
             std::cout << " changes detected" << std::endl;
-            this->km += heuristic(this->s_last, this->s_start);
+            this->km = this->km + heuristic(this->s_last, this->s_start);
+            std::cout << "km: " << this->km << std::endl;
             this->s_last = this->s_start;
             
 
