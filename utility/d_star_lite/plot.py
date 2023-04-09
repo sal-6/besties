@@ -118,4 +118,4 @@ def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False
                 os.remove(os.path.join(pdir, f"true_obs_{i}.csv"))
 
 if __name__ == "__main__":
-    animate_dir(OUTPUT_PATH, 0, 44, delete_inputs_files=True, plot_obs=True)
+    animate_dir(OUTPUT_PATH, 0, 18, delete_inputs_files=True, plot_obs=True)

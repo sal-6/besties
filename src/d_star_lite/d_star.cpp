@@ -14,19 +14,12 @@ int main() {
         known_grid.obstruct(15, i);
     }
     
-    /* for (int i = 16; i < 26; i++) {
+    for (int i = 16; i < 26; i++) {
         true_grid.obstruct(i, 24);
-    } */
-    /* for (int i = 5; i < 15; i++) {
-        true_grid.obstruct(i, 24);
-    } */
-    
-    // randomly place 100 obstacles
-    for (int i = 0; i < 200; i++) {
-        int x = rand() % 30;
-        int y = rand() % 30;
-        true_grid.obstruct(x, y);
     }
+    /* for (int i = 6; i < 15; i++) {
+        true_grid.obstruct(i, 24);
+    } */
     
     Node* start = known_grid.get_node(0, 0);
     Node* goal = known_grid.get_node(29, 15);
@@ -58,5 +51,7 @@ int main() {
         count++;
     }
     
+    
+    std::cout << "Done!" << std::endl;
     return 0;
 }

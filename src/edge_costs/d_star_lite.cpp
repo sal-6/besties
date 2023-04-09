@@ -4,13 +4,12 @@
 #include <vector>
 #include <iostream>
 
-#include "d_star_lite/d_star_lite.h"
+#include "edge_costs/d_star_lite.h"
 
 
 float heuristic(Node* a, Node* b) {
     return sqrt(pow(a->x - b->x, 2) + pow(a->y - b->y, 2));
 }
-
 
 
 Node::Node() {
@@ -19,6 +18,7 @@ Node::Node() {
     this->is_obstacle = false;
 }
 
+
 Node::Node(int x, int y) {
     this->x = x;
     this->y = y;
@@ -26,12 +26,14 @@ Node::Node(int x, int y) {
     
 }
 
+
 Edge::Edge(Node* start, Node* end, float cost) {
     this->start = start;
     this->end = end;
     this->cost = cost;
     this->old_cost = cost;
 }
+
 
 Edge::Edge(Node* start, Node* end, float cost, float old_cost) {
     this->start = start;
@@ -67,6 +69,10 @@ bool Grid::in_bounds(int x, int y) {
 
 void Grid::obstruct(int x, int y) {
     this->grid[x][y].is_obstacle = true;
+}
+
+void Grid::set_height(int x, int y, float height) {
+    this->grid[x][y].height = height;
 }
 
 bool Grid::is_obstructed(int x, int y) {
@@ -120,11 +126,16 @@ std::vector<Node*> Grid::succ(Node* node) {
 }
 
 float Grid::c(Node* u, Node* v) {
+    float cost = 0;
+    
     if (this->get_node(u->x, u->y)->is_obstacle || this->get_node(v->x, v->y)->is_obstacle) {
         return std::numeric_limits<float>::infinity();
     }
     
-    return heuristic(u, v);
+    cost += heuristic(u, v) * WEIGHT_DIST;
+    cost += abs(this->get_node(u->x, u->y)->height - this->get_node(v->x, v->y)->height) * WEIGHT_HEIGHT;
+    
+    return cost;
 }
 
 std::vector<Edge*> Grid::get_changed_edges_about_node(Node* node, Grid* compare_state, int distance) {
@@ -199,15 +210,31 @@ bool Grid::export_obs_to_file(std::string filename) {
     return true;
 }
 
+bool Grid::export_topology_to_file(std::string filename) {
+    FILE* fp = fopen(filename.c_str(), "w");
+    if (fp == NULL) {
+        return false;
+    }
+
+    for (int i = 0; i < this->width; i++) {
+        for (int j = 0; j < this->height; j++) {
+            Node* n = this->get_node(i, j);
+                fprintf(fp, "%d,%d,%d\n", i, j, n->height);
+        }
+    }
+
+    fclose(fp);
+    return true;
+}
+
 void Grid::log_grid() {
     // print last row first (y = 0 is at the bottom)
     for (int j = this->height - 1; j >= 0; j--) {
         for (int i = 0; i < this->width; i++) {
             if (this->grid[i][j].is_obstacle) {
-                printf("|X|");
+                printf("X");
             } else {
-                // g value
-                printf("|%d|", this->grid[i][j].g);
+                printf(" ");
             }
         }
         printf("\n");
@@ -314,15 +341,6 @@ Path::Path() {
 
 void Path::append(Node* node) {
     this->nodes.push_back(node);
-}
-
-bool Path::contains(Node* node) {
-    for (Node* n : this->nodes) {
-        if (n->x == node->x && n->y == node->y) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool Path::export_to_file(std::string filename) {
@@ -473,18 +491,17 @@ Path DStarLite::main_loop(Node* begin_loc) {
         Node* s_min = nullptr;
         for (Node*s_prime : succs) {
             //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
-                float curr = this->c(s_start, s_prime) + s_prime->g;
-                if (curr < min_s) {
-                    min_s = curr;
-                    s_min = s_prime;
-                }
+            float curr = this->c(s_start, s_prime) + s_prime->g;
+            if (curr < min_s) {
+                min_s = curr;
+                s_min = s_prime;
+            }
         }
         
         std::cout << "here" << std::endl;
         std::cout << s_start->x << " " << s_start->y << std::endl;
 
         s_start = s_min;
-        std::cout << s_min << std::endl;
         path.append(s_start);
         
         std::vector<Edge*> changed_edges = this->scan_for_changes();

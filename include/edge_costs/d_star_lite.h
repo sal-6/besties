@@ -1,12 +1,14 @@
 #include <queue>
 #include <vector>
 
-
+#define WEIGHT_DIST 1;
+#define WEIGHT_HEIGHT 1;
 
 class Node {
     public:
         int x;
         int y;
+        int height;
         
         // this is likely temporary
         bool is_obstacle;
@@ -42,6 +44,7 @@ class Grid {
         
         bool in_bounds(int x, int y);
         void obstruct(int x, int y);
+        void set_height(int x, int y, float height);
         bool is_obstructed(int x, int y);
         Node* get_node(int x, int y);
         std::vector<Node*> pred(Node* node);
@@ -52,6 +55,7 @@ class Grid {
         std::vector<Edge*> get_changed_edges_about_node(Node* node, Grid* curr_state, int distance);
         void update_grid_from_changed_edges(std::vector<Edge*> changed_edges);
         bool export_obs_to_file(std::string filename);
+        bool export_topology_to_file(std::string filename);
 
         void log_grid();
 };
