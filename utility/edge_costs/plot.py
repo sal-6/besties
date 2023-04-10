@@ -222,4 +222,4 @@ if __name__ == "__main__":
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\true_obs.csv",
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\topo.csv",
               0) """
-    animate(OUTPUT_PATH, 0, 30, delete_inputs_files=True)
+    animate(OUTPUT_PATH, 0, 44, delete_inputs_files=True)

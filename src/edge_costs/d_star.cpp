@@ -10,10 +10,10 @@ int main() {
     Grid true_grid = Grid(30, 30);
     Grid known_grid = Grid(30, 30);
     
-    /* for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 25; i++) {
         true_grid.obstruct(15, i);
         known_grid.obstruct(15, i);
-    } */
+    }
     
     /*
     for (int i = 16; i < 26; i++) {
