@@ -204,9 +204,10 @@ def animate(pdir, start=0, end=10, delete_inputs_files=False):
             writer.append_data(image)
 
     # remove temp folder and contents
-    for i in range(start, end + 1):
-        os.remove(os.path.join(pdir, "temp", f"{i}.png"))
-    os.rmdir(os.path.join(pdir, "temp"))
+    if delete_inputs_files:
+        for i in range(start, end + 1):
+            os.remove(os.path.join(pdir, "temp", f"{i}.png"))
+        os.rmdir(os.path.join(pdir, "temp"))
     
     if delete_inputs_files:
         for i in range(start, end + 1):
@@ -222,4 +223,4 @@ if __name__ == "__main__":
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\true_obs.csv",
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\topo.csv",
               0) """
-    animate(OUTPUT_PATH, 0, 44, delete_inputs_files=True)
+    animate(OUTPUT_PATH, 0, 43, delete_inputs_files=False)
