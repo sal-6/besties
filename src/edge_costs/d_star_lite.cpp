@@ -75,6 +75,26 @@ void Grid::set_height(int x, int y, float height) {
     this->grid[x][y].height = height;
 }
 
+void Grid::parse_grid_heights_from_file(std::string filename) {
+    FILE* fp = fopen(filename.c_str(), "r");
+    if (fp == NULL) {
+        std::cout << "Error opening file" << std::endl;
+        return;
+    }
+    
+    char line[256];
+    //fgets(line, sizeof(line), fp); // ignore the first line
+    while (fgets(line, sizeof(line), fp)) {
+        int x, y; 
+        float h;
+        sscanf(line, "%d,%d,%f\n", &x, &y, &h);
+        //std::cout << x << ", " << y << ", " << h << std::endl;
+        this->set_height(x, y, h);
+    }
+    
+    fclose(fp);  
+}
+
 bool Grid::is_obstructed(int x, int y) {
     return this->in_bounds(x, y) && this->grid[x][y].is_obstacle;
 }
@@ -219,7 +239,7 @@ bool Grid::export_topology_to_file(std::string filename) {
     for (int i = 0; i < this->width; i++) {
         for (int j = 0; j < this->height; j++) {
             Node* n = this->get_node(i, j);
-                fprintf(fp, "%d,%d,%d\n", i, j, n->height);
+                fprintf(fp, "%d,%d,%f\n", i, j, n->height);
         }
     }
 
@@ -353,7 +373,7 @@ bool Path::export_to_file(std::string filename) {
     for (Node* node : this->nodes) {
         fprintf(fp, "%d, %d\n", node->x, node->y);
     }
-    
+
     
     fclose(fp);
     return true;

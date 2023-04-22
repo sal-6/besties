@@ -3,8 +3,56 @@
 
 #include "edge_costs/d_star_lite.h"
 
-
 int main() {
+    srand(time(0));
+    
+    Grid true_grid = Grid(127, 127);
+    Grid known_grid = Grid(127, 127);
+    
+    true_grid.parse_grid_heights_from_file("./data/height.txt");
+    known_grid.parse_grid_heights_from_file("./data/height.txt");
+
+    true_grid.export_topology_to_file("./output/edge_costs/path/topo.csv");
+    true_grid.export_obs_to_file("./output/edge_costs/path/true_obs.csv");
+    
+    
+    Node* start = known_grid.get_node(10, 10);
+    Node* goal = known_grid.get_node(120, 120);
+    
+    DStarLite d_star = DStarLite(start, goal, &known_grid);
+    std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(start, &known_grid, 3);
+    d_star.queue_updated_edges(changes);
+    d_star.map->update_grid_from_changed_edges(changes);
+    
+    
+    Path p = d_star.main_loop(start);
+    
+    
+    int count = 0;
+    while (p.nodes.size() > 1) {
+        Node* next_pos = p.nodes[1];        
+        
+        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 3);
+        
+        d_star.queue_updated_edges(changes);
+        d_star.map->update_grid_from_changed_edges(changes);
+
+        //std::cout << "True vs Known: " << std::endl;
+        //true_grid.log_grid();
+        //std::cout << std::endl;
+        //d_star.map->log_grid();
+        
+        p = d_star.main_loop(next_pos);
+        
+        p.export_to_file("./output/edge_costs/path/path_" + std::to_string(count) + ".csv");
+        d_star.map->export_obs_to_file("./output/edge_costs/path/obs_" + std::to_string(count) + ".csv");
+        count++;
+    }
+    
+    return 0;
+}
+
+int main_old() {
     srand(time(0));
     
     Grid true_grid = Grid(30, 30);
