@@ -1,14 +1,14 @@
 CC=g++
 CFLAGS=-I./include
 
-all: d_star.o d_star_lite.o
-	$(CC) d_star.o d_star_lite.o -o ec
+all: field.o field_d_star.o
+	$(CC) field.o field_d_star.o -o fds
 
-d_star.o : ./src/edge_costs/d_star.cpp
-	$(CC) -c $(CFLAGS) ./src/edge_costs/d_star.cpp
+field.o : ./src/field_d_star/field.cpp
+	$(CC) -c $(CFLAGS) ./src/field_d_star/field.cpp
 
-d_star_lite.o: ./src/edge_costs/d_star_lite.cpp
-	$(CC) -c $(CFLAGS) ./src/edge_costs/d_star_lite.cpp
+field_d_star.o: ./src/field_d_star/field_d_star.cpp
+	$(CC) -c $(CFLAGS) ./src/field_d_star/field_d_star.cpp
 
 clean:
 	rm -f *.o
