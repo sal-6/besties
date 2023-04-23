@@ -19,6 +19,7 @@ Node::Node() {
     this->x = 0;
     this->y = 0;
     this->is_obstacle = false;
+    this->visited = false;
 }
 
 
@@ -26,7 +27,7 @@ Node::Node(int x, int y) {
     this->x = x;
     this->y = y;
     this->is_obstacle = false;
-    
+    this->visited = false;
 }
 
 NeighborPair::NeighborPair(Node* node, Node* n1, Node* n2) {
@@ -411,6 +412,31 @@ Priority FieldDStar::key(Node* s) {
     return Priority(k1, k2);
 }
 
+Path::Path() {
+    this->nodes = std::vector<Node*>();
+}
+
+void Path::append(Node* node) {
+    this->nodes.push_back(node);
+}
+
+bool Path::export_to_file(std::string filename) {
+    FILE* fp = fopen(filename.c_str(), "w");
+    if (fp == NULL) {
+        return false;
+    }
+
+    // log each trajectory
+    for (Node* node : this->nodes) {
+        fprintf(fp, "%d, %d\n", node->x, node->y);
+    }
+    
+    
+    fclose(fp);
+    return true;
+}
+
+
 FieldDStar::FieldDStar(Node* start, Node* goal, Grid* map) {
     this->s_start = start;
     this->s_goal = goal;
@@ -443,6 +469,10 @@ FieldDStar::FieldDStar(Node* start, Node* goal, Grid* map) {
 
 void FieldDStar::update_state(Node* s){
     // TODO: figure out how to handle not visited b4
+    if (!s->visited){
+        s->visited = true;
+        s->g = std::numeric_limits<float>::infinity();
+    }
     
     if (s->x != this->s_goal->x || s->y != this->s_goal->y) { // s is not goal
         float min_c = std::numeric_limits<float>::infinity();
@@ -493,7 +523,12 @@ void FieldDStar::compute_shortest_path() {
 }
 
 
-float compute_cost(Node* s, Node* sa, Node* sb) {
+float FieldDStar::c(Node* a, Node* b) {
+
+    return this->map->c(a, b);
+}
+
+float FieldDStar::compute_cost(Node* s, Node* sa, Node* sb) {
     // diagonal check
     Node* s1;
     Node* s2;
@@ -508,8 +543,8 @@ float compute_cost(Node* s, Node* sa, Node* sb) {
     float v_s;
     
     // TODO: calculate c and b
-    float c = 1;
-    float b = 1;
+    float c = this->c(s, s2);
+    float b = this->c(s, s1);
     
     if (std::min(c, b) == std::numeric_limits<float>::infinity()) {
         v_s = std::numeric_limits<float>::infinity();
@@ -538,4 +573,42 @@ float compute_cost(Node* s, Node* sa, Node* sb) {
     }
     
     return v_s;
+}
+
+Path FieldDStar::main(Node* begin) {
+    Path path = Path();
+    path.append(begin);
+    
+    
+    while (true) {
+        this->compute_shortest_path();
+        
+        if (this->s_start->rhs == std::numeric_limits<float>::infinity()) {
+            return path;
+        }
+        
+        std::vector<Node*> succs = this->map->succ(s_start);
+
+        float min_s = std::numeric_limits<float>::infinity();
+        Node* s_min = nullptr;
+        for (Node*s_prime : succs) {
+            //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
+            float curr = this->c(s_start, s_prime) + s_prime->g;
+            if (curr < min_s) {
+                min_s = curr;
+                s_min = s_prime;
+            }
+        }
+        
+        std::cout << "here" << std::endl;
+        std::cout << s_start->x << " " << s_start->y << std::endl;
+
+        s_start = s_min;
+        path.append(s_start);
+        
+        if (s_start->x == this->s_goal->x && s_start->y == this->s_goal->y) {
+            return path;
+        }
+    }
+    
 }

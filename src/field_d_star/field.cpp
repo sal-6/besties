@@ -13,7 +13,21 @@ void test_consec(){
     }
 }
 
+void test_1() {
+    
+    Grid g = Grid(10, 10);
+    
+    Node* start_node = g.get_node(0, 0);
+    Node* goal_node = g.get_node(3, 7);
+    
+    FieldDStar fds = FieldDStar(start_node, goal_node, &g);
+    
+    Path p = fds.main(start_node);
+    
+    
+}
+
 int main() {
     
-    test_consec();
+    test_1();
 }

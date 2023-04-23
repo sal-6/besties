@@ -14,6 +14,8 @@ class Node {
         int y;
         int height;
         
+        bool visited;
+        
         // this is likely temporary
         bool is_obstacle;
         
