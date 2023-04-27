@@ -5,11 +5,11 @@ import imageio
 import numpy as np
 
 OUTPUT_PATH = "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path"
-STAR = (16, 35)
-GOAL = (70, 54)
+STAR = (10, 10)
+GOAL = (120, 120)
 
-WIDTH = 101
-HEIGHT = 101
+WIDTH = 127
+HEIGHT = 127
 
 PATH_SIDE_LENGTH = 0.5
 OBS_SIDE_LENGTH = 1
@@ -222,4 +222,4 @@ if __name__ == "__main__":
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\true_obs.csv",
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\topo.csv",
               0) """
-    animate(OUTPUT_PATH, 0, 53, delete_inputs_files=False)
+    animate(OUTPUT_PATH, 0, 177, delete_inputs_files=False)

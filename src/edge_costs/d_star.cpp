@@ -9,12 +9,15 @@ int main() {
     Grid true_grid = Grid(127, 127);
     Grid known_grid = Grid(127, 127);
     
-    true_grid.parse_grid_heights_from_file("./data/height.txt");
-    known_grid.parse_grid_heights_from_file("./data/height.txt");
+    printf("Parsing grid heights from file...\n");
+    
+    true_grid.parse_grid_heights_from_file("./data/desert_topo.csv");
+    known_grid.parse_grid_heights_from_file("./data/desert_topo.csv");
 
     true_grid.export_topology_to_file("./output/edge_costs/path/topo.csv");
     true_grid.export_obs_to_file("./output/edge_costs/path/true_obs.csv");
     
+    printf("Parsing grid heights from file...done\n");
     
     Node* start = known_grid.get_node(10, 10);
     Node* goal = known_grid.get_node(120, 120);
@@ -25,8 +28,9 @@ int main() {
     d_star.map->update_grid_from_changed_edges(changes);
     
     
+    printf("Starting main loop...\n");    
     Path p = d_star.main_loop(start);
-    
+    printf("Starting main loop...done\n");
     
     int count = 0;
     while (p.nodes.size() > 1) {

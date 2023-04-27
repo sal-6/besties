@@ -12,6 +12,27 @@ float heuristic(Node* a, Node* b) {
 }
 
 
+Rover::Rover() {
+    this->battery_level = 100;
+}
+
+
+TimeManager::TimeManager() {
+    this->time = 0;
+}
+
+float TimeManager::get_time() {
+    return this->time;
+}
+
+void TimeManager::set_time(float time) {
+    this->time = time;
+}
+
+void TimeManager::step_time(float d_time) {
+    this->time += d_time;
+}
+
 Node::Node() {
     this->x = 0;
     this->y = 0;

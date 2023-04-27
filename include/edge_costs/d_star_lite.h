@@ -2,7 +2,27 @@
 #include <vector>
 
 #define WEIGHT_DIST 1;
-#define WEIGHT_HEIGHT 100;
+#define WEIGHT_HEIGHT 1;
+
+
+class TimeManager {
+    public:
+        float time;
+    
+        TimeManager();
+        float get_time();
+        void set_time(float time);
+        void step_time(float time);
+};
+
+
+class Rover {
+    public:
+        float battery_level;
+        
+        Rover();
+};
+
 
 class Node {
     public:
