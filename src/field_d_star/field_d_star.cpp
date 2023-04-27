@@ -405,6 +405,16 @@ void Grid::log_grid() {
     }
 }
 
+void Grid::log_cost_map() {
+    // print last row first (y = 0 is at the bottom)
+    for (int j = this->height - 1; j >= 0; j--) {
+        for (int i = 0; i < this->width; i++) {
+            printf("%f ", this->grid[i][j].g);
+        }
+        printf("\n");
+    }
+}
+
 Priority FieldDStar::key(Node* s) {
     float k1 = std::min(s->g, s->rhs) + heuristic(this->s_start, s);
     float k2 = std::min(s->g, s->rhs);

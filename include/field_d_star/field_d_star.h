@@ -115,6 +115,8 @@ class Grid {
         bool export_topology_to_file(std::string filename);
 
         void log_grid();
+        void log_cost_map();
+        
 };
 
 

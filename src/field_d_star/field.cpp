@@ -24,6 +24,8 @@ void test_1() {
     
     Path p = fds.main(start_node);
     
+    g.log_cost_map();
+    
     
 }
 
