@@ -5,11 +5,11 @@ import imageio
 import numpy as np
 
 OUTPUT_PATH = "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path"
-STAR = (0, 0)
-GOAL = (29, 15)
+STAR = (16, 35)
+GOAL = (70, 54)
 
-WIDTH = 30
-HEIGHT = 30
+WIDTH = 101
+HEIGHT = 101
 
 PATH_SIDE_LENGTH = 0.5
 OBS_SIDE_LENGTH = 1
@@ -44,7 +44,7 @@ def parse_topo(fpath):
     with open(fpath, 'r') as fi:
         for line in fi:
             data = line.split(",")
-            topo.append((int(data[0]), int(data[1]), int(data[2])))
+            topo.append((int(data[0]), int(data[1]), float(data[2])))
 
     return topo
 
@@ -142,7 +142,6 @@ def plot_path(fpath, obs_path, true_obs_path, topo_path, output_path):
     
     heights = [i[2] for i in topo]
     max_h = max(heights)
-
     
     for i in range(len(topo)):
         x, y, h = topo[i]
@@ -223,4 +222,4 @@ if __name__ == "__main__":
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\true_obs.csv",
               "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path\\topo.csv",
               0) """
-    animate(OUTPUT_PATH, 0, 43, delete_inputs_files=False)
+    animate(OUTPUT_PATH, 0, 53, delete_inputs_files=False)

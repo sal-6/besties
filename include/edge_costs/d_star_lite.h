@@ -2,13 +2,13 @@
 #include <vector>
 
 #define WEIGHT_DIST 1;
-#define WEIGHT_HEIGHT 1;
+#define WEIGHT_HEIGHT 100;
 
 class Node {
     public:
         int x;
         int y;
-        int height;
+        float height;
         
         // this is likely temporary
         bool is_obstacle;
@@ -45,6 +45,7 @@ class Grid {
         bool in_bounds(int x, int y);
         void obstruct(int x, int y);
         void set_height(int x, int y, float height);
+        void parse_grid_heights_from_file(std::string filename);
         bool is_obstructed(int x, int y);
         Node* get_node(int x, int y);
         std::vector<Node*> pred(Node* node);
