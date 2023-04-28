@@ -24,6 +24,22 @@ class Rover {
 };
 
 
+class ShadowPillar {
+    public:
+        int x;
+        int y;
+        float height;
+        float radius;
+        
+        ShadowPillar(int x, int y, float height, float radius);  
+};
+
+class ShadowManager {
+    public:
+        std::vector
+};
+
+
 class Node {
     public:
         int x;
