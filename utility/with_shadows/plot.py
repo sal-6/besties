@@ -5,7 +5,7 @@ import imageio
 import numpy as np
 
 OUTPUT_PATH = "G:\\My Drive\\UMD\\Spring 2023\\ENAE788V\\Code\\besties\\output\\edge_costs\\path"
-STAR = (10, 10)
+""" STAR = (10, 10)
 GOAL = (120, 120)
 
 WIDTH = 127
@@ -17,7 +17,22 @@ OBS_SIDE_LENGTH = 1
 VIEW_DISTANCE = 3
 
 DELETE_FILES = False
-NUM_FRAMES = 28
+NUM_FRAMES = 28 """
+
+
+STAR = (0, 0)
+GOAL = (29, 29)
+
+WIDTH = 30
+HEIGHT = 30
+
+PATH_SIDE_LENGTH = 0.5
+OBS_SIDE_LENGTH = 1
+
+VIEW_DISTANCE = 3
+
+DELETE_FILES = False
+NUM_FRAMES = 34
 
 def parse_path(fpath):
     
@@ -51,6 +66,16 @@ def parse_topo(fpath):
 
     return topo
 
+def parse_shadows(fpath):
+    
+    shad = []
+    with open(fpath, 'r') as f:
+        for line in f:
+            data = line.split(",")
+            shad.append([int(data[0]), int(data[1]), float(data[2]), float(data[3]), float(data[4])])
+    
+    return shad
+
 def calculate_patch_center(x, y, w=1, h=1):
     return (x - w / 2, y - h / 2)
 
@@ -62,50 +87,55 @@ def jet(val):
     return plt.cm.jet(val)
 
 
-def plot_path_old(fpath, output_path, obs_path=None, true_obs_path=None):
-    data = parse_path(fpath)
+def get_light_level(shadows, x, y):
     
-    # Create a figure and axis
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    light_lvl = 1
     
-    # Create a rectangle patch centered at start
-    rect = patches.Rectangle(calculate_patch_center(STAR[0], STAR[1], 1, 1), 1, 1, linewidth=1, facecolor='blue')
-    ax.add_patch(rect)
-    
-    # Create a rectangle patch centered at goal
-    rect = patches.Rectangle(calculate_patch_center(GOAL[0], GOAL[1], 1, 1), 1, 1, linewidth=1, facecolor='green')
-    ax.add_patch(rect)
-    
-    for i in range(len(data)):
-        x, y = data[i]
-        rect = patches.Rectangle(calculate_patch_center(x, y, PATH_SIDE_LENGTH, PATH_SIDE_LENGTH), PATH_SIDE_LENGTH, PATH_SIDE_LENGTH, linewidth=1, facecolor='pink')
-        ax.add_patch(rect)
+    for s in shadows:
+        start_x = s[0]
+        start_y = s[1]
+        end_x = s[2]
+        end_y = s[3]
+        strength = s[4]
         
-    if obs_path and true_obs_path:
-        obs = parse_obs(obs_path)
-        true_obs = parse_obs(true_obs_path)
-        for i in range(len(true_obs)):
-            x, y = true_obs[i]
-            if true_obs[i] not in obs:
-                rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='red')
-            else:
-                rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor='black')
-            ax.add_patch(rect)
+        dx = end_x - start_x
+        dy = end_y - start_y
+        t = ((x - start_x) * dx + (y - start_y) * dy) / (dx * dx + dy * dy)
+        
+        if t < 0:
+            closest_x = start_x
+            closest_y = start_y
+        
+        elif t > 1:
+            closest_x = end_x
+            closest_y = end_y
+        
+        else:
+            closest_x = start_x + t * dx
+            closest_y = start_y + t * dy
+        
+        dist = np.sqrt((x - closest_x)**2 + (y - closest_y) ** 2)
+    
+        l_lvl = 1 - ( - 1 / strength * dist + 1)
+        
+        if l_lvl < 0:
+            l_lvl = 0
+        
+        if l_lvl > 1:
+            l_lvl = 1
+        
+        
+        light_lvl *= l_lvl
+        
+    return light_lvl
+        
 
-    # draw a 2*VIEW_DISTANCE x 2*VIEW_DISTANCE square around the current position
-    x, y = data[0]
-    total_size = 2*VIEW_DISTANCE+3
-    rect = patches.Rectangle(calculate_patch_center(x, y, total_size, total_size), total_size, total_size, linewidth=1, edgecolor='black', facecolor='none')
-    ax.add_patch(rect)
-        
-    ax.set_xlim([-1, WIDTH + 1])
-    ax.set_ylim([-1, HEIGHT + 1])
-    
-    # equal aspect ratio
-    ax.set_aspect('equal')
-    plt.savefig(output_path)
-    plt.close()
+
+def interpolate(color_a, color_b, t):
+    # 'color_a' and 'color_b' are RGB tuples
+    # 't' is a value between 0.0 and 1.0
+    # this is a naive interpolation
+    return tuple(int(a + (b - a) * t) for a, b in zip(color_a, color_b))
 
 def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False):
     
@@ -137,7 +167,7 @@ def animate_dir(pdir, start=0, end=10, plot_obs=False, delete_inputs_files=False
                 os.remove(os.path.join(pdir, f"obs_{i}.csv"))
                 os.remove(os.path.join(pdir, f"true_obs_{i}.csv"))
 
-def plot_path(fpath, obs_path, true_obs_path, topo_path, output_path):
+def plot_path(fpath, obs_path, true_obs_path, topo_path, shadow_path, output_path):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -146,13 +176,23 @@ def plot_path(fpath, obs_path, true_obs_path, topo_path, output_path):
     topo = parse_topo(topo_path)
     true_obs = parse_obs(true_obs_path)
     obs = parse_obs(obs_path)
+    shads = parse_shadows(shadow_path)
     
     heights = [i[2] for i in topo]
     max_h = max(heights)
     
+    # topology
     for i in range(len(topo)):
         x, y, h = topo[i]
-        rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor=jet( 1 - h / max_h))
+        light_lvl = get_light_level(shads, x, y)
+        c = jet( 1 - h / max_h)[0:3:1]
+        base_color = [0, 0, 0]
+        base_color[0] = int(c[0] * 255)
+        base_color[1] = int(c[1] * 255)
+        base_color[2] = int(c[2] * 255)
+        color = interpolate((0, 0, 0), base_color, light_lvl)
+        reformatted_color = (color[0] / 255, color[1] / 255, color[2] / 255)
+        rect = patches.Rectangle(calculate_patch_center(x, y, OBS_SIDE_LENGTH, OBS_SIDE_LENGTH), OBS_SIDE_LENGTH, OBS_SIDE_LENGTH, linewidth=1, facecolor=reformatted_color)
         ax.add_patch(rect)
     
     # Create a rectangle patch centered at start
@@ -200,7 +240,8 @@ def animate(pdir, start=0, end=10, delete_inputs_files=False):
         plot_path(fpath,
                   os.path.join(pdir, f"obs_{i}.csv"),
                   os.path.join(pdir, f"true_obs.csv"),
-                  os.path.join(pdir, "topo.csv"),  
+                  os.path.join(pdir, f"topo.csv"),
+                  os.path.join(pdir, f"shadow_{i}.csv"),
                   output_path
                  )
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include "edge_costs/d_star_lite.h"
 
@@ -12,10 +13,121 @@ float heuristic(Node* a, Node* b) {
 }
 
 
-Rover::Rover() {
+Rover::Rover(float drain_rate, float charge_rate) {
     this->battery_level = 100;
+    this->drain_rate = drain_rate;
+    this->charge_rate = charge_rate;
 }
 
+void Rover::update_battery_level(float d_time, float light_level) {
+    if (light_level >= 0.9) {
+        this->battery_level += this->charge_rate * d_time;
+        this->battery_level = std::min(this->battery_level, 100.0f);
+    } else {
+        this->battery_level -= this->drain_rate * d_time;
+        this->battery_level = std::max(this->battery_level, 0.0f);
+    }
+}
+
+ShadowPillar::ShadowPillar(int x, int y, float height, float theta, float rotation_rate, float strength) {
+    this->x = x;
+    this->y = y;
+    this->height = height;
+    this->theta = theta;
+    this->rotation_rate = rotation_rate;
+    this->strength = strength;
+}
+
+float ShadowPillar::get_light_level_at_time(int x, int y, float time, float sun_elev) {
+    int start_x = this->x;
+    int start_y = this->y;
+    
+    float theta = fmod(this->theta + this->rotation_rate * time, 2 * PI );
+    float len = this->height / tan(sun_elev);
+    
+    float end_x = start_x + len * cos(theta);
+    float end_y = start_y + len * sin(theta);
+    
+    
+    // compute closest point on line segment
+    float closest_x, closest_y;
+    float dx = end_x - start_x;
+    float dy = end_y - start_y;
+    float t = ((x - start_x) * dx + (y - start_y) * dy) / (dx * dx + dy * dy);
+    
+    if (t < 0) {
+        closest_x = start_x;
+        closest_y = start_y;
+    }
+    else if (t > 1) {
+        closest_x = end_x;
+        closest_y = end_y;
+    }
+    else {
+        closest_x = start_x + t * dx;
+        closest_y = start_y + t * dy;
+    }
+    
+    // compute distance to closest point
+    float dist = sqrt(pow(x - closest_x, 2) + pow(y - closest_y, 2));
+    
+    float l_lvl = 1 - ( - 1 / this->strength * dist + 1);
+    
+    if (l_lvl < 0) {
+        l_lvl = 0;
+    }
+    
+    if (l_lvl > 1) {
+        l_lvl = 1;
+    }
+    
+    return l_lvl;
+    
+}
+
+ShadowManager::ShadowManager(float sun_elev) {
+    this->pillars = std::vector<ShadowPillar*>();
+    this->sun_elev = sun_elev;
+}
+
+void ShadowManager::add_pillar(ShadowPillar* pillar) {
+    this->pillars.push_back(pillar);
+}
+
+float ShadowManager::get_light_level_at_time(int x, int y, float time) {
+    float light_level = 1;
+    
+    // compute light level from each pillar
+    for (int i = 0; i < this->pillars.size(); i++) {
+        light_level *= this->pillars[i]->get_light_level_at_time(x, y, time, this->sun_elev);
+    }
+    
+    return light_level;
+}
+
+bool ShadowManager::export_shadows_to_file(std::string filename, float time) {
+    FILE* fp = fopen(filename.c_str(), "w");
+    if (fp == NULL) {
+        return false;
+    }
+
+    for (int i = 0; i < this->pillars.size(); i++) {
+        int start_x = this->pillars[i]->x;
+        int start_y = this->pillars[i]->y;
+        
+        float theta = fmod(this->pillars[i]->theta + this->pillars[i]->rotation_rate * time, 2 * PI );
+        float len = this->pillars[i]->height / tan(this->sun_elev);
+        
+        float end_x = start_x + len * cos(theta);
+        float end_y = start_y + len * sin(theta);
+        
+        fprintf(fp, "%d, %d, %f, %f, %f\n", start_x, start_y, end_x, end_y, this->pillars[i]->strength);
+    }
+    
+    
+    fclose(fp);
+    return true;
+}
 
 TimeManager::TimeManager() {
     this->time = 0;
@@ -66,6 +178,25 @@ Edge::Edge(Node* start, Node* end, float cost, float old_cost) {
 Grid::Grid(int width, int height) {
     this->width = width;
     this->height = height;
+    this->shadow_manager = nullptr;
+    
+    this->grid = new Node*[width];
+    for (int i = 0; i < width; i++) {
+        this->grid[i] = new Node[height];
+    }
+    
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            this->grid[i][j] = Node(i, j);
+        }
+    }
+    
+}
+
+Grid::Grid(int width, int height, ShadowManager* shadow_manager) {
+    this->width = width;
+    this->height = height;
+    this->shadow_manager = shadow_manager;
     
     this->grid = new Node*[width];
     for (int i = 0; i < width; i++) {
@@ -166,7 +297,7 @@ std::vector<Node*> Grid::succ(Node* node) {
     
 }
 
-float Grid::c(Node* u, Node* v) {
+float Grid::c(Node* u, Node* v, float t, Rover* rover) {
     float cost = 0;
     
     if (this->get_node(u->x, u->y)->is_obstacle || this->get_node(v->x, v->y)->is_obstacle) {
@@ -176,10 +307,15 @@ float Grid::c(Node* u, Node* v) {
     cost += heuristic(u, v) * WEIGHT_DIST;
     cost += abs(this->get_node(u->x, u->y)->height - this->get_node(v->x, v->y)->height) * WEIGHT_HEIGHT;
     
+    if (this->shadow_manager != nullptr) {
+        float light_lvl = this->shadow_manager->get_light_level_at_time(v->x, v->y, t);
+        cost += (1 - light_lvl) * WEIGHT_SHADOW;
+    }
+    
     return cost;
 }
 
-std::vector<Edge*> Grid::get_changed_edges_about_node(Node* node, Grid* compare_state, int distance) {
+std::vector<Edge*> Grid::get_changed_edges_about_node(Node* node, Grid* compare_state, int distance, Rover* rover, float t_0, float t_1) {
     std::vector<Edge*> edges;
     
     // check to see if the costs of any of the edges around the node have changed
@@ -202,10 +338,9 @@ std::vector<Edge*> Grid::get_changed_edges_about_node(Node* node, Grid* compare_
                     Node* n_this_succ_node = n_this_succ[k];
                     Node* n_compare_succ_node = compare_state->get_node(n_this_succ_node->x, n_this_succ_node->y);
                     
-                    if (this->c(n_this, n_this_succ_node) != compare_state->c(n_compare, n_compare_succ_node)) {
-                        edges.push_back(new Edge(n_this, n_this_succ_node, this->c(n_this, n_this_succ_node), compare_state->c(n_compare, n_compare_succ_node)));
+                    if (this->c(n_this, n_this_succ_node, t_1, rover) != compare_state->c(n_compare, n_compare_succ_node, t_0, rover)) {
+                        edges.push_back(new Edge(n_this, n_this_succ_node, this->c(n_this, n_this_succ_node, t_1, rover), compare_state->c(n_compare, n_compare_succ_node, t_0, rover)));
                     }
-                    
                 }
             }
         }
@@ -400,12 +535,13 @@ bool Path::export_to_file(std::string filename) {
     return true;
 }
 
-DStarLite::DStarLite(Node* start, Node* goal, Grid* map) {
+DStarLite::DStarLite(Node* start, Node* goal, Grid* map, Rover* rover) {
     this->s_start = start;
     this->s_goal = goal;
     this->map = map;
     this->U = Queue();
     this->km = 0;
+    this->rover = rover;
     
     this->changed_edge_costs = std::vector<Edge*>();
     
@@ -442,12 +578,12 @@ void DStarLite::update_vertex(Node* u) {
     }
 }
 
-float DStarLite::c(Node* a, Node* b) {
+float DStarLite::c(Node* a, Node* b, float t) {
 
-    return this->map->c(a, b);
+    return this->map->c(a, b, t, this->rover);
 }
 
-void DStarLite::compute_shortest_path() {
+void DStarLite::compute_shortest_path(float t) {
     
     while (this->U.top_key() < this->calculate_key(this->s_start) || this->s_start->rhs > this->s_start->g) {
         Node* u = this->U.top();
@@ -463,7 +599,7 @@ void DStarLite::compute_shortest_path() {
             std::vector<Node*> preds = this->map->pred(u);
             for (Node* s : preds) {
                 if (s != this->s_goal){
-                    s->rhs = std::min(s->rhs, this->c(s, u) + u->g);
+                    s->rhs = std::min(s->rhs, this->c(s, u, t) + u->g);
                 }
                 this->update_vertex(s);
             }
@@ -474,13 +610,13 @@ void DStarLite::compute_shortest_path() {
             preds.push_back(u);
             
             for (Node* s : preds) {
-                if (s->rhs == this->c(s, u) + g_old) {
+                if (s->rhs == this->c(s, u, t) + g_old) {
                     if (s != this->s_goal) {
                         
                         std::vector<Node*> succs = this->map->succ(s);
                         float min_s = std::numeric_limits<float>::infinity();
                         for (Node* s_prime : succs) {
-                            float curr = this->c(s, s_prime) + s_prime->g;
+                            float curr = this->c(s, s_prime, t) + s_prime->g;
                             if (curr < min_s) {
                                 min_s = curr;
                             }
@@ -511,14 +647,14 @@ std::vector<Edge*> DStarLite::scan_for_changes() {
     return changed_edges;
 }
 
-Path DStarLite::main_loop(Node* begin_loc) {
+Path DStarLite::main_loop(Node* begin_loc, float t) {
     Path path = Path();
     
     //this->U.clear();
     this->s_start = this->map->get_node(begin_loc->x, begin_loc->y);
     path.append(this->s_start);
     this->s_last = this->s_start;
-    this->compute_shortest_path();
+    this->compute_shortest_path(t);
     
     while (s_start != s_goal){
         if (s_start->rhs == std::numeric_limits<float>::infinity()) {
@@ -532,7 +668,7 @@ Path DStarLite::main_loop(Node* begin_loc) {
         Node* s_min = nullptr;
         for (Node*s_prime : succs) {
             //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
-            float curr = this->c(s_start, s_prime) + s_prime->g;
+            float curr = this->c(s_start, s_prime, t) + s_prime->g;
             if (curr < min_s) {
                 min_s = curr;
                 s_min = s_prime;
@@ -572,7 +708,7 @@ Path DStarLite::main_loop(Node* begin_loc) {
                 Node* v = this->map->get_node(edge->end->x, edge->end->y);
                 
                 float c_old = edge->old_cost;
-                float c_new = this->map->c(u, v);
+                float c_new = edge->cost;
             
                 if (c_old > c_new) {
                     if (u != this->s_goal) {
@@ -583,7 +719,7 @@ Path DStarLite::main_loop(Node* begin_loc) {
                         std::vector<Node*> succs = this->map->succ(u);
                         float min_s = std::numeric_limits<float>::infinity();
                         for (Node* s_prime : succs) {
-                            float curr = this->c(u, s_prime) + s_prime->g;
+                            float curr = this->c(u, s_prime, t) + s_prime->g;
                             if (curr < min_s) {
                                 min_s = curr;
                             }
@@ -597,7 +733,7 @@ Path DStarLite::main_loop(Node* begin_loc) {
             }
             
         }
-        this->compute_shortest_path();        
+        this->compute_shortest_path(t);        
     }
     
     
