@@ -20,7 +20,7 @@ DELETE_FILES = False
 NUM_FRAMES = 28 """
 
 
-STAR = (0, 0)
+""" STAR = (0, 0)
 GOAL = (29, 29)
 
 WIDTH = 30
@@ -32,7 +32,21 @@ OBS_SIDE_LENGTH = 1
 VIEW_DISTANCE = 3
 
 DELETE_FILES = False
-NUM_FRAMES = 34
+NUM_FRAMES = 38 """
+
+STAR = (10, 10)
+GOAL = (115, 115)
+
+WIDTH = 129
+HEIGHT = 129
+
+PATH_SIDE_LENGTH = 0.5
+OBS_SIDE_LENGTH = 1
+
+VIEW_DISTANCE = 3
+
+DELETE_FILES = False
+NUM_FRAMES = 196
 
 def parse_path(fpath):
     

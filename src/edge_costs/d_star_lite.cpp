@@ -81,6 +81,9 @@ float ShadowPillar::get_light_level_at_time(int x, int y, float time, float sun_
         l_lvl = 1;
     }
     
+    //std::cout << "start: (" << start_x << ", " << start_y << ")" << std::endl;
+    //std::cout << "end: (" << end_x << ", " << end_y << ")" << std::endl;
+    //std::cout << "closest: (" << closest_x << ", " << closest_y << ")" << std::endl;
     return l_lvl;
     
 }
@@ -121,7 +124,7 @@ bool ShadowManager::export_shadows_to_file(std::string filename, float time) {
         float end_x = start_x + len * cos(theta);
         float end_y = start_y + len * sin(theta);
         
-        fprintf(fp, "%d, %d, %f, %f, %f\n", start_x, start_y, end_x, end_y, this->pillars[i]->strength);
+        //fprintf(fp, "%d, %d, %f, %f, %f\n", start_x, start_y, end_x, end_y, this->pillars[i]->strength);
     }
     
     
@@ -731,9 +734,9 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
                 }
                 
             }
-            
+            this->compute_shortest_path(t);        
+                        
         }
-        this->compute_shortest_path(t);        
     }
     
     

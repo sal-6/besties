@@ -6,7 +6,7 @@
 // weight constants
 #define WEIGHT_DIST 1;
 #define WEIGHT_HEIGHT 1;
-#define WEIGHT_SHADOW 1;
+#define WEIGHT_SHADOW 0;
 
 
 class TimeManager {
