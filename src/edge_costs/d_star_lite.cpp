@@ -13,10 +13,11 @@ float heuristic(Node* a, Node* b) {
 }
 
 
-Rover::Rover(float drain_rate, float charge_rate) {
+Rover::Rover(float drain_rate, float charge_rate, float radius) {
     this->battery_level = 100;
     this->drain_rate = drain_rate;
     this->charge_rate = charge_rate;
+    this->radius = radius;
 }
 
 void Rover::update_battery_level(float d_time, float light_level) {
@@ -178,6 +179,10 @@ Edge::Edge(Node* start, Node* end, float cost, float old_cost) {
     this->old_cost = old_cost;
 }
 
+Obstacle::Obstacle() {
+    this->nodes = std::vector<Node*>();
+}
+
 Grid::Grid(int width, int height) {
     this->width = width;
     this->height = height;
@@ -223,7 +228,9 @@ bool Grid::in_bounds(int x, int y) {
 }
 
 void Grid::obstruct(int x, int y) {
-    this->grid[x][y].is_obstacle = true;
+    if (this->in_bounds(x, y)) {
+        this->grid[x][y].is_obstacle = true;
+    }
 }
 
 void Grid::set_height(int x, int y, float height) {
@@ -609,6 +616,7 @@ void DStarLite::compute_shortest_path(float t) {
         } else {
             float g_old = u->g;
             u->g = std::numeric_limits<float>::infinity();
+            
             std::vector<Node*> preds = this->map->pred(u);
             preds.push_back(u);
             
@@ -669,10 +677,17 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
 
         float min_s = std::numeric_limits<float>::infinity();
         Node* s_min = nullptr;
+        Node* last = path.nodes.back();
         for (Node*s_prime : succs) {
             //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
             float curr = this->c(s_start, s_prime, t) + s_prime->g;
+            
             if (curr < min_s) {
+                // check to make sure we are not going back to the previous node
+                /* if (s_prime->x != last->x && s_prime->y != last->y) {
+                    min_s = curr;
+                    s_min = s_prime;
+                } */
                 min_s = curr;
                 s_min = s_prime;
             }
@@ -745,4 +760,49 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
 
     
     return path;
+}
+
+
+
+Obstacle* generate_random_obstacle(int x, int y, int max_side) {
+    Obstacle* obs = new Obstacle();
+    
+    // create a random distribution of nodes with x, y as the bottom left corner
+    // and max_side as the max side length
+    
+    int side_length = rand() % max_side + 1;
+    int x_offset = rand() % (max_side - side_length + 1);
+    int y_offset = rand() % (max_side - side_length + 1);
+    
+    for (int i = 0; i < side_length; i++) {
+        for (int j = 0; j < side_length; j++) {
+            Node* node = new Node(x + x_offset + i, y + y_offset + j);
+            int include_node = rand() % 2;
+            if (include_node == 1) {
+                obs->nodes.push_back(node);
+            }
+            
+        }
+    }
+    
+    return obs;
+}
+
+Obstacle* expand_obstacle(Obstacle* obstacle, Rover rover) {
+    Obstacle* expanded_obstacle = new Obstacle();
+    
+    // expand the obstacle by the rover's radius    
+    for (const auto& node : obstacle->nodes) {
+        int x = node->x;
+        int y = node->y;
+        for (int i = -rover.radius; i <= rover.radius; i++) {
+            for (int j = -rover.radius; j <= rover.radius; j++) {
+                if (std::sqrt(i*i + j*j) <= rover.radius && std::floor(x+i) == x+i && std::floor(y+j) == y+j) {
+                    expanded_obstacle->nodes.push_back(new Node(x+i, y+j));
+                }
+            }
+        }
+    }
+    
+    return expanded_obstacle;
 }

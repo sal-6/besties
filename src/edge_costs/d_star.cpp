@@ -3,112 +3,7 @@
 
 #include "edge_costs/d_star_lite.h"
 
-
-
-int main2() {
-    srand(time(0));
-    
-    int start_x = 0;
-    int start_y = 0;
-    int goal_x = 29;
-    int goal_y = 29;
-    
-    int width = 30;
-    int height = 30;
-    
-    float time_step = 1;
-    float sun_angle = PI / 4;
-    
-    float charge_rate = 1;
-    float discharge_rate = 1;
-    
-    TimeManager time_manager = TimeManager();
-    ShadowManager shadow_manager = ShadowManager(sun_angle);
-    Rover rover = Rover(discharge_rate, charge_rate);
-    
-    ShadowPillar sp1 = ShadowPillar(20, 14, 7, 0, 0.2, 10);
-    shadow_manager.add_pillar(&sp1); 
-    
-    Grid true_grid = Grid(width, height, &shadow_manager);
-    Grid known_grid = Grid(width, height, &shadow_manager);
-
-    for (int i = 0; i < true_grid.width; i++) {
-        for (int j = 0; j < true_grid.height; j++) {
-            int h = rand() % 20;
-            h = 1;
-            known_grid.set_height(i, j, h);
-            true_grid.set_height(i, j, h);
-        }
-    }
-    
-    for (int i = 0; i < 25; i++) {
-        true_grid.obstruct(15, i);
-        //known_grid.obstruct(15, i);
-    }
-    
-    // add 100 random obstacles that are not on the start or goal
-    /* for (int i = 0; i < 100; i++) {
-        int x = rand() % 30;
-        int y = rand() % 30;
-        
-        if (x == 0 && y == 0) {
-            i--;
-            continue;
-        }
-        
-        if (x == 29 && y == 15) {
-            i--;
-            continue;
-        }
-        
-        true_grid.obstruct(x, y);
-        //known_grid.obstruct(x, y);
-    } */
-    
-    
-    true_grid.export_topology_to_file("./output/edge_costs/path/topo.csv");
-    true_grid.export_obs_to_file("./output/edge_costs/path/true_obs.csv");
-    
-    
-    Node* start = known_grid.get_node(start_x, start_y);
-    Node* goal = known_grid.get_node(goal_x, goal_y);
-    
-    DStarLite d_star = DStarLite(start, goal, &known_grid, &rover);
-    std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(start, &known_grid, 3, &rover, 0, time_manager.get_time());
-    d_star.queue_updated_edges(changes);
-    d_star.map->update_grid_from_changed_edges(changes);
-    
-    Path p = d_star.main_loop(start, 0);
-    
-    int count = 0;
-    while (p.nodes.size() > 1) {
-        float old_time = time_manager.get_time();
-        time_manager.step_time(time_step);
-        Node* next_pos = p.nodes[1];
-        float light = shadow_manager.get_light_level_at_time(next_pos->x, next_pos->y, time_manager.get_time());
-        rover.update_battery_level(time_step, light);     
-        
-        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 3, &rover, old_time, time_manager.get_time());
-        
-        d_star.queue_updated_edges(changes);
-        d_star.map->update_grid_from_changed_edges(changes);
-
-        //std::cout << "True vs Known: " << std::endl;
-        //true_grid.log_grid();
-        //std::cout << std::endl;
-        //d_star.map->log_grid();
-        
-        p = d_star.main_loop(next_pos, time_manager.get_time());
-        
-        p.export_to_file("./output/edge_costs/path/path_" + std::to_string(count) + ".csv");
-        d_star.map->export_obs_to_file("./output/edge_costs/path/obs_" + std::to_string(count) + ".csv");
-        shadow_manager.export_shadows_to_file("./output/edge_costs/path/shadow_" + std::to_string(count) + ".csv", time_manager.get_time());
-        count++;
-    }
-    
-    return 0;
-}
-
+// primar func
 int main() {
     srand(time(0));
     
@@ -120,17 +15,23 @@ int main() {
     int width = 129;
     int height = 129;
     
+    int num_random_obs = 100;
+    int max_obs_side = 1;
+    
     float time_step = 1;
     float sun_angle = PI / 4;
     
     float charge_rate = 1;
     float discharge_rate = 1;
+    float r_rad = 2;
+    
+    int scan_radius = 3;
     
     std::string topo_file = "./data/height_128_128_proc.txt";
     
     TimeManager time_manager = TimeManager();
     ShadowManager shadow_manager = ShadowManager(sun_angle);
-    Rover rover = Rover(discharge_rate, charge_rate);
+    Rover rover = Rover(discharge_rate, charge_rate, r_rad);
     
     ShadowPillar sp1 = ShadowPillar(20, 14, 7, 0, 0.2, 10);
     shadow_manager.add_pillar(&sp1); 
@@ -143,35 +44,43 @@ int main() {
     true_grid.parse_grid_heights_from_file(topo_file);
     known_grid.parse_grid_heights_from_file(topo_file);
         
-
     true_grid.export_topology_to_file("./output/edge_costs/path/topo.csv");
-    true_grid.export_obs_to_file("./output/edge_costs/path/true_obs.csv");
     
     printf("Parsing grid heights from file...done\n");
     
-    //for (int i = 0; i < 25; i++) {
-    //    true_grid.obstruct(15, i);
-        //known_grid.obstruct(15, i);
-    //}
+    printf("Adding unknown obstacles...\n");
     
-    // add 100 random obstacles that are not on the start or goal
-    /* for (int i = 0; i < 100; i++) {
-        int x = rand() % 30;
-        int y = rand() % 30;
+    // add 200 random obstacles that are not on the start or goal
+    for (int i = 0; i < num_random_obs; i++) {
+        int x = rand() % width;
+        int y = rand() % height;
         
-        if (x == 0 && y == 0) {
-            i--;
-            continue;
+        Obstacle* rand_o = generate_random_obstacle(x, y, max_obs_side);
+        Obstacle* expanded_o = expand_obstacle(rand_o, rover);
+        
+        // loop through all the points in the expanded obstacle and obstruct them
+        for (Node* n : expanded_o->nodes) {
+            bool is_valid = true;
+            
+            // check if the node is start
+            if (n->x == start_x && n->y == start_y) {
+                is_valid = false;
+            }
+            
+            // check if the node is goal
+            if (n->x == goal_x && n->y == goal_y) {
+                is_valid = false;
+            }
+            
+            if (is_valid) {
+                true_grid.obstruct(n->x, n->y);
+            }
         }
-        
-        if (x == 29 && y == 15) {
-            i--;
-            continue;
-        }
-        
-        true_grid.obstruct(x, y);
-        //known_grid.obstruct(x, y);
-    } */        
+
+    }        
+    
+    
+    printf("Adding unknown obstacles...done\n");
     
     Node* start = known_grid.get_node(start_x, start_y);
     Node* goal = known_grid.get_node(goal_x, goal_y);
@@ -188,6 +97,40 @@ int main() {
     
     Path p = d_star.main_loop(start, 0);
     
+    std::vector<float> block_points = std::vector<float>();
+    block_points.push_back(0.2);
+    block_points.push_back(0.35);
+    block_points.push_back(0.4);
+    block_points.push_back(0.6);
+    block_points.push_back(0.8);
+    
+    for (float bp : block_points) {
+        int ind = (int) (p.nodes.size() * bp);
+        Obstacle* o = generate_random_obstacle(p.nodes[ind]->x, p.nodes[ind]->y, max_obs_side);
+        Obstacle* expanded_o = expand_obstacle(o, rover);
+    
+        // loop through all the points in the expanded obstacle and obstruct them
+        for (Node* n : expanded_o->nodes) {
+            bool is_valid = true;
+            
+            // check if the node is start
+            if (n->x == start_x && n->y == start_y) {
+                is_valid = false;
+            }
+            
+            // check if the node is goal
+            if (n->x == goal_x && n->y == goal_y) {
+                is_valid = false;
+            }
+            
+            if (is_valid) {
+                true_grid.obstruct(n->x, n->y);
+            }
+        }
+    }
+    
+    true_grid.export_obs_to_file("./output/edge_costs/path/true_obs.csv");
+    
     std::cout << "Hee" << std::endl;
     
     int count = 0;
@@ -198,7 +141,7 @@ int main() {
         float light = shadow_manager.get_light_level_at_time(next_pos->x, next_pos->y, time_manager.get_time());
         rover.update_battery_level(time_step, light);     
         
-        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, 3, &rover, old_time, time_manager.get_time());
+        std::vector<Edge*> changes = true_grid.get_changed_edges_about_node(next_pos, &known_grid, scan_radius, &rover, old_time, time_manager.get_time());
         
         d_star.queue_updated_edges(changes);
         d_star.map->update_grid_from_changed_edges(changes);
@@ -216,17 +159,25 @@ int main() {
 
 int main1() {
     
-    ShadowPillar sp = ShadowPillar(10, 10, 5, 0, 1, 5);
-    //float l = sp.get_light_level_at_time(10, 10, PI /2, PI / 4);
+    srand(time(0));
+    Rover r = Rover(1, 1, 2);
     
-    ShadowManager sm = ShadowManager(PI/4);
-    sm.add_pillar(&sp);
+    Obstacle* o = generate_random_obstacle(0, 0, 4);
     
-    float l = sm.get_light_level_at_time(9, 12, PI /2);
+    std::cout << "Obstacle: " << std::endl;
+    // print all node x and y values in the obstacle
+    for (int i = 0; i < o->nodes.size(); i++) {
+        std::cout << o->nodes[i]->x << ", " << o->nodes[i]->y << std::endl;
+    }
     
-    //sm.export_shadows_to_file("./output/edge_costs/path/shadows.csv", PI/2);
+    Obstacle* exp_obs = expand_obstacle(o, r);
     
-    printf("Light level: %f\n", l);
+    
+    std::cout << "Exp. Obstacle: " << std::endl;
+    // print all node x and y values in the obstacle
+    for (int i = 0; i < exp_obs->nodes.size(); i++) {
+        std::cout << exp_obs->nodes[i]->x << ", " << exp_obs->nodes[i]->y << std::endl;
+    }
     
     
     return 0;
