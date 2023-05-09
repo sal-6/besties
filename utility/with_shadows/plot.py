@@ -46,7 +46,7 @@ OBS_SIDE_LENGTH = 1
 VIEW_DISTANCE = 3
 
 DELETE_FILES = False
-NUM_FRAMES = 196
+NUM_FRAMES = 133
 
 def parse_path(fpath):
     

@@ -4,10 +4,9 @@
 #define PI 3.14159265f
 
 // weight constants
-#define WEIGHT_DIST 1;
-#define WEIGHT_HEIGHT 1;
+#define WEIGHT_DIST 75;
+#define WEIGHT_HEIGHT .03;
 #define WEIGHT_SHADOW 0;
-
 
 class TimeManager {
     public:
@@ -25,8 +24,9 @@ class Rover {
         float battery_level;
         float drain_rate;
         float charge_rate; 
+        float radius;
         
-        Rover(float drain_rate, float charge_rate);
+        Rover(float drain_rate, float charge_rate, float radius);
         void update_battery_level(float d_time, float light_level);
 };
 
@@ -196,4 +196,14 @@ class DStarLite {
 };
 
 
+class Obstacle {
+    public:
+        std::vector<Node*> nodes;
+        
+        Obstacle();
+};
+
+
 float heuristic(Node* u, Node* v);
+Obstacle* generate_random_obstacle(int x, int y, int max_side);
+Obstacle* expand_obstacle(Obstacle* obstacle, Rover rover);

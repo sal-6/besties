@@ -15,8 +15,8 @@ int main() {
     int width = 129;
     int height = 129;
     
-    int num_random_obs = 100;
-    int max_obs_side = 1;
+    int num_random_obs = 50;
+    int max_obs_side = 2;
     
     float time_step = 1;
     float sun_angle = PI / 4;
@@ -25,7 +25,7 @@ int main() {
     float discharge_rate = 1;
     float r_rad = 2;
     
-    int scan_radius = 3;
+    int scan_radius = 4; // default 3
     
     std::string topo_file = "./data/height_128_128_proc.txt";
     
@@ -33,8 +33,25 @@ int main() {
     ShadowManager shadow_manager = ShadowManager(sun_angle);
     Rover rover = Rover(discharge_rate, charge_rate, r_rad);
     
-    ShadowPillar sp1 = ShadowPillar(20, 14, 7, 0, 0.2, 10);
-    shadow_manager.add_pillar(&sp1); 
+    printf("Adding shadows ...\n");    
+    
+    //ShadowPillar sp1 = ShadowPillar(65, 30, 35, 1.5, 0.5, 30);
+    //ShadowPillar sp2 = ShadowPillar(69, 95, 12, 1.5, 0.5, 15);
+    //ShadowPillar sp3 = ShadowPillar(125, 63, 9, 1.5, 0.5, 13);
+    
+    //ShadowPillar sp1 = ShadowPillar(22, 50, 20, 1.5, -0.1, 1);
+    //ShadowPillar sp2 = ShadowPillar(69, 95, 12, 1.5, -0.1, 1);
+    //ShadowPillar sp3 = ShadowPillar(125, 63, 9, 1.5, -0.1, 1);
+    
+    ShadowPillar sp1 = ShadowPillar(65, 30, 35, 0, .025, 7);
+    ShadowPillar sp2 = ShadowPillar(69, 95, 12, 0, .025, 15);
+    ShadowPillar sp3 = ShadowPillar(125, 63, 9, 0, 0.025, 13);
+    
+    shadow_manager.add_pillar(&sp1);
+    shadow_manager.add_pillar(&sp2); 
+    shadow_manager.add_pillar(&sp3); 
+    
+    printf("Done adding shadows ...\n");    
     
     Grid true_grid = Grid(width, height, &shadow_manager);
     Grid known_grid = Grid(width, height, &shadow_manager);
@@ -97,6 +114,7 @@ int main() {
     
     Path p = d_star.main_loop(start, 0);
     
+    // add some miscelaneous obstacles in the path
     std::vector<float> block_points = std::vector<float>();
     block_points.push_back(0.2);
     block_points.push_back(0.35);

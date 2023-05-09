@@ -125,7 +125,7 @@ bool ShadowManager::export_shadows_to_file(std::string filename, float time) {
         float end_x = start_x + len * cos(theta);
         float end_y = start_y + len * sin(theta);
         
-        //fprintf(fp, "%d, %d, %f, %f, %f\n", start_x, start_y, end_x, end_y, this->pillars[i]->strength);
+        fprintf(fp, "%d, %d, %f, %f, %f\n", start_x, start_y, end_x, end_y, this->pillars[i]->strength);
     }
     
     
@@ -319,7 +319,10 @@ float Grid::c(Node* u, Node* v, float t, Rover* rover) {
     
     if (this->shadow_manager != nullptr) {
         float light_lvl = this->shadow_manager->get_light_level_at_time(v->x, v->y, t);
-        cost += (1 - light_lvl) * WEIGHT_SHADOW;
+        cost += (1.0 - light_lvl) * WEIGHT_SHADOW;
+        if (light_lvl < .95) {
+            return std::numeric_limits<float>::infinity();
+        }
     }
     
     return cost;
@@ -658,7 +661,7 @@ std::vector<Edge*> DStarLite::scan_for_changes() {
     return changed_edges;
 }
 
-Path DStarLite::main_loop(Node* begin_loc, float t) {
+/* Path DStarLite::main_loop(Node* begin_loc, float t) {
     Path path = Path();
     
     //this->U.clear();
@@ -682,12 +685,17 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
             //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
             float curr = this->c(s_start, s_prime, t) + s_prime->g;
             
+            //bool node_in_path = false;
+            //for (Node* node : path.nodes) {
+            //    if (node->x == s_prime->x && node->y == s_prime->y) {
+            //        node_in_path = true;
+            //        std::cout << "node in path" << std::endl;
+            //    }
+            //}
+            
+            
             if (curr < min_s) {
-                // check to make sure we are not going back to the previous node
-                /* if (s_prime->x != last->x && s_prime->y != last->y) {
-                    min_s = curr;
-                    s_min = s_prime;
-                } */
+
                 min_s = curr;
                 s_min = s_prime;
             }
@@ -697,6 +705,7 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
         std::cout << s_start->x << " " << s_start->y << std::endl;
 
         s_start = s_min;
+        //s_start = new Node(s_min->x, s_min->y);
         path.append(s_start);
         
         std::vector<Edge*> changed_edges = this->scan_for_changes();
@@ -752,6 +761,123 @@ Path DStarLite::main_loop(Node* begin_loc, float t) {
             this->compute_shortest_path(t);        
                         
         }
+        this->compute_shortest_path(t);   
+    }
+    
+    
+    std::cout << "Path found" << std::endl;
+    std::cout << "-----------" << std::endl;
+
+    
+    return path;
+} */
+
+
+Path DStarLite::main_loop(Node* begin_loc, float t) {
+    Path path = Path();
+    
+    //this->U.clear();
+    this->s_start = this->map->get_node(begin_loc->x, begin_loc->y);
+    path.append(this->s_start);
+    this->s_last = this->s_start;
+    this->compute_shortest_path(t);
+    
+    while (s_start != s_goal){
+        if (s_start->rhs == std::numeric_limits<float>::infinity()) {
+            std::cout << "No path found" << std::endl;
+            return path;
+        }
+        
+        std::vector<Node*> succs = this->map->succ(s_start);
+
+        float min_s = std::numeric_limits<float>::infinity();
+        Node* s_min = nullptr;
+        Node* last = path.nodes.back();
+        for (Node*s_prime : succs) {
+            //std::cout << s_prime->x << " " << s_prime->y << ". is_obs: " << s_prime->is_obstacle << std::endl;
+            float curr = this->c(s_start, s_prime, t) + s_prime->g;
+            
+            //bool node_in_path = false;
+            //for (Node* node : path.nodes) {
+            //    if (node->x == s_prime->x && node->y == s_prime->y) {
+            //        node_in_path = true;
+            //        std::cout << "node in path" << std::endl;
+            //    }
+            //}
+            
+            
+            if (curr < min_s) {
+                // check to make sure we are not going back to the previous node
+                /* if (s_prime->x != last->x && s_prime->y != last->y) {
+                    min_s = curr;
+                    s_min = s_prime;
+                } */
+                min_s = curr;
+                s_min = s_prime;
+            }
+        }
+        
+        std::cout << "here" << std::endl;
+        std::cout << s_start->x << " " << s_start->y << std::endl;
+
+        s_start = s_min;
+        //s_start = new Node(s_min->x, s_min->y);
+        path.append(s_start);
+        
+        std::vector<Edge*> changed_edges = this->scan_for_changes();
+        std::cout << "changed edges size: " << changed_edges.size() << std::endl;
+        // log all changes
+        for (Edge* edge : changed_edges) {
+            std::cout << "start: " << edge->start->x << " " << edge->start->y << std::endl;
+            std::cout << "end: " << edge->end->x << " " << edge->end->y << std::endl;
+            std::cout << "old cost: " << edge->old_cost << std::endl;
+            std::cout << "new cost: " << edge->cost << std::endl;
+            std::cout << "----------------" << std::endl;
+        }
+        //this->map->log_grid();
+        if (changed_edges.size() > 0) {
+            //std::cin.get();
+            this->map->log_grid();
+            std::cout << " changes detected" << std::endl;
+            this->km = this->km + heuristic(this->s_last, this->s_start);
+            std::cout << "km: " << this->km << std::endl;
+            this->s_last = this->s_start;
+            
+
+            for (Edge* edge : changed_edges) {
+                std::cout << "updating" << std::endl;
+
+                Node* u = this->map->get_node(edge->start->x, edge->start->y);
+                Node* v = this->map->get_node(edge->end->x, edge->end->y);
+                
+                float c_old = edge->old_cost;
+                float c_new = edge->cost;
+            
+                if (c_old > c_new) {
+                    if (u != this->s_goal) {
+                        u->rhs = std::min(u->rhs, c_new + v->g);
+                    }
+                } else if (u->rhs == c_old + v->g) {
+                    if (u != this->s_goal) {
+                        std::vector<Node*> succs = this->map->succ(u);
+                        float min_s = std::numeric_limits<float>::infinity();
+                        for (Node* s_prime : succs) {
+                            float curr = this->c(u, s_prime, t) + s_prime->g;
+                            if (curr < min_s) {
+                                min_s = curr;
+                            }
+                        }
+                        u->rhs = min_s;
+
+                    }
+                    this->update_vertex(u);
+                }
+                
+            }
+            this->compute_shortest_path(t);        
+                        
+        }
+        this->compute_shortest_path(t);   
     }
     
     
